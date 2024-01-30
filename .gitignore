@@ -1,2 +1,4 @@
 **/__pycache__
 experiments/results
+env/
+gnn4ua/datasets/*.joblib

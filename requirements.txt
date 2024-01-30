@@ -2,3 +2,7 @@ numpy
 networkx
 matplotlib
 torch
+pandas
+seaborn
+scikit-learn
+torch_geometric
