@@ -97,7 +97,7 @@ def main():
         plt.savefig(f'{plot_file}.png', bbox_inches='tight')
         plt.savefig(f'{plot_file}.pdf', bbox_inches='tight')
         plt.tight_layout()
-        plt.show()
+        # plt.show()
 
 
 if __name__ == '__main__':

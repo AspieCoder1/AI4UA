@@ -5,16 +5,15 @@ import numpy as np
 import seaborn as sns
 import sys
 import matplotlib.pyplot as plt
-from gnn4ua.utils import find_cluster_centroids, find_small_concepts
 from sklearn.manifold import TSNE
 from matplotlib.image import imread
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
-from gnn4ua.viz import visualize_lattice
 
 sys.path.append('..')
+from gnn4ua.viz import visualize_lattice
 from gnn4ua.datasets.loader import load_data
 from gnn4ua.models import BlackBoxGNN, GCoRe, HierarchicalGCN
-
+from gnn4ua.utils import find_cluster_centroids, find_small_concepts
 
 # torch.autograd.set_detect_anomaly(True)
 seed_everything(42)
@@ -112,7 +111,7 @@ def main():
                                         visualize_lattice(edge_index_example, node_size=300)
                                         plt.tight_layout()
                                         plt.savefig(os.path.join(figures_dir, f'task_{label_name}_type_{task_id}_layer_{layer_id}_concept_{concept_id}.png'), transparent=True, dpi=20)
-                                        plt.show()
+                                        # plt.show()
 
                                         imgs[concept_id] = imread(os.path.join(figures_dir, f'task_{label_name}_type_{task_id}_layer_{layer_id}_concept_{concept_id}.png'))
                                         break
@@ -137,7 +136,7 @@ def main():
                             plt.tight_layout()
                             plt.savefig(os.path.join(summary_figures_dir, f'task_{label_name}_type_{task_id}_layer_{layer_id}.png'))
                             plt.savefig(os.path.join(summary_figures_dir, f'task_{label_name}_type_{task_id}_layer_{layer_id}.pdf'))
-                            plt.show()
+                            # plt.show()
 
                     break
                 break

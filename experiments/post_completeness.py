@@ -9,9 +9,8 @@ import numpy as np
 
 import sys
 
-from gnn4ua.utils import completeness_score
-
 sys.path.append('..')
+from gnn4ua.utils import completeness_score
 from gnn4ua.datasets.loader import load_data
 from gnn4ua.models import BlackBoxGNN, GCoRe, HierarchicalGCN
 

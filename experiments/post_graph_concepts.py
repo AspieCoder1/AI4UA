@@ -109,7 +109,7 @@ def main():
                         reference_graph_concept = graph_concepts[layer_id][reference_graph_id]
                         most_similar_graphs = torch.argwhere(torch.sum(graph_concepts[layer_id] == reference_graph_concept, dim=1) == len(reference_graph_concept))
                         most_similar_graphs = list(most_similar_graphs.squeeze().numpy())
-                        graph_ids.append(reference_graph_id)
+                        # graph_ids.append(reference_graph_id)
                         for graph_id in most_similar_graphs:
                             digraph = pyg_edges_to_nx_lattice(edge_indexes[graph_id])
 
@@ -124,7 +124,7 @@ def main():
                             plt.tight_layout()
                             plt.savefig(os.path.join(figures_dir, f'layer_{layer_id}_graph_{graph_id}.png'), dpi=300)
                             plt.savefig(os.path.join(figures_dir, f'layer_{layer_id}_graph_{graph_id}.pdf'), dpi=300)
-                            plt.show()
+                            # plt.show()
 
                         # nodes
                         node_emb = node_concepts[layer_id][data.batch == reference_graph_id]
@@ -170,7 +170,7 @@ def main():
                                 plt.tight_layout()
                                 plt.savefig(os.path.join(figures_dir, f'layer_{layer_id}_khop_{k_hop}_graph_{graph_id}_node_{node_id}.png'), dpi=300)
                                 plt.savefig(os.path.join(figures_dir, f'layer_{layer_id}_khop_{k_hop}_graph_{graph_id}_node_{node_id}.pdf'), dpi=300)
-                                plt.show()
+                                # plt.show()
 
 
 

@@ -153,7 +153,7 @@ def main():
                             plt.axis('off')
                             plt.tight_layout()
                             plt.savefig(os.path.join(figures_dir, f'task_{task_id}_layer_{layer_id}_concept_{int(concept_id)}.png'), transparent=True, dpi=20)
-                            plt.show()
+                            # plt.show()
                             saved_img = imread(os.path.join(figures_dir, f'task_{task_id}_layer_{layer_id}_concept_{int(concept_id)}.png'))
                             saved_imgs.append(saved_img)
 
@@ -181,7 +181,7 @@ def main():
                         plt.tight_layout()
                         plt.savefig(os.path.join(summary_figures_dir, f'task_{task_id}_layer_{layer_id}.png'), bbox_inches='tight')
                         plt.savefig(os.path.join(summary_figures_dir, f'task_{task_id}_layer_{layer_id}.pdf'), bbox_inches='tight')
-                        plt.show()
+                        # plt.show()
 
                     break
                 break

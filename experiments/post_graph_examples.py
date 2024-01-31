@@ -104,7 +104,7 @@ def main():
                     plt.tight_layout()
                     plt.savefig(os.path.join(summary_figures_dir, f'classifier_weights.png'), bbox_inches='tight')
                     plt.savefig(os.path.join(summary_figures_dir, f'classifier_weights.pdf'), bbox_inches='tight')
-                    plt.show()
+                    # plt.show()
 
                     layer_ids = [7, 2]
                     cols = sns.color_palette("colorblind")[:2]
@@ -124,7 +124,7 @@ def main():
                                 plt.tight_layout()
                                 plt.savefig(os.path.join(summary_figures_dir, f'task_{label_name}_{base_name}_layer_{layer_id}_cid_{cid.item()}.png'), bbox_inches='tight')
                                 plt.savefig(os.path.join(summary_figures_dir, f'task_{label_name}_{base_name}_layer_{layer_id}_cid_{cid.item()}.pdf'), bbox_inches='tight')
-                                plt.show()
+                                # plt.show()
 
                     break
                 break
