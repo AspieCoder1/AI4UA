@@ -6,3 +6,6 @@ pandas
 seaborn
 scikit-learn
 torch_geometric
+pygraphviz --config-setting="--global-option=-I$(brew --prefix graphviz)/include/" \
+                --config-setting="--global-option=-L$(brew --prefix graphviz)/lib/" \
+umap
