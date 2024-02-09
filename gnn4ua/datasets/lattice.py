@@ -5,6 +5,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # device = torch.device("cpu")
 
 class Lattice:
+
     def __init__(self, loe=torch.zeros(1).to(device)):
         self.loe = torch.from_numpy(loe).to(device)
         self.loe_transposed = torch.transpose(self.loe, 0, 1)
@@ -20,6 +21,8 @@ class Lattice:
         self.meet_semi_dist = False
         self.join_semi_dist = False
         self.semi_dist = False
+        # our super cool code contribution 
+        self.agru_n2 = False
 
         #compute the matrices of majorities and minorities, for al n,m maj[n,m] = [0,..,0,1,0...] 1 for elements that are >= n,m 0 otherwise
         self.majority_tensor, self.minority_tensor = self.compute_majmin_tensors()
@@ -32,6 +35,7 @@ class Lattice:
             self.meet_semi_dist = self.is_meet_semidistributive()
             self.join_semi_dist = self.is_join_semidistributive()
             self.semi_dist = self.is_semidistributive()
+            self.agru_n2 = self.is_agruesian_n_2()
             self.adj = self.loe2adj()
 
     def is_distributive(self):
@@ -60,7 +64,6 @@ class Lattice:
         if not torch.equal(left_side,right_side):
             return False
         return True
-
 
     def is_modular(self):
         ### old slowest
@@ -94,9 +97,6 @@ class Lattice:
             return False
         return True
 
-
-
-
     def is_meet_semidistributive(self):
         # old slow
         # for (x, y, z) in itertools.product(range(1, self.size-1), range(1, self.size-1), range(1, self.size-1)):
@@ -126,7 +126,6 @@ class Lattice:
         if torch.any(torch.logical_and(condition_1, torch.logical_not(condition_2))):
             return False
         return True
-
 
     def is_join_semidistributive(self):
         # for (x, y, z) in itertools.product(range(1, self.size-1), range(1, self.size-1), range(1, self.size-1)):
@@ -161,6 +160,35 @@ class Lattice:
         if self.is_join_semidistributive() and self.is_meet_semidistributive():
             return True
         return False
+    
+    def is_agruesian_n_2(self):
+        ### old slowest
+        # for (x, y, z) in itertools.product(range(1, self.size-1), range(1, self.size-1), range(1, self.size-1)):
+        #     if self.meet_tensor[x, self.join_tensor[y, z]] != self.join_tensor[self.meet_tensor[x, y], self.meet_tensor[x, z]]:
+                # return False
+        # return True
+        tensor_size = [self.size,self.size,self.size,self.size]
+        a = torch.tensor(np.arange(self.size)).to(device)
+        a_tensor = a.repeat_interleave(self.size ** 3 , dim=0).reshape(tensor_size)
+        b = torch.tensor(np.arange(self.size)).to(device)
+        b_tensor = b.repeat_interleave(self.size ** 3 , dim=0).reshape(tensor_size)
+        # c | d:
+        c_join_d_tensor = self.join_tensor.expand(tensor_size)
+        # b | (c | d)
+        b_join_c_join_d = self.join_tensor[b_tensor, c_join_d_tensor]
+        left_side = self.meet_tensor[a_tensor,b_join_c_join_d]
+
+        c = torch.tensor(np.arange(self.size)).to(device)
+        c_tensor = c.repeat_interleave(self.size ** 3 , dim=0).reshape(tensor_size)
+        a_join_c_tensor = self.join_tensor.expand(tensor_size)
+        b_join_d_tensor = self.join_tensor.expand(tensor_size)
+        ajc_meet_bjd = self.meet_tensor[a_join_c_tensor, b_join_d_tensor]
+        right_side = self.join_tensor[c_tensor, ajc_meet_bjd]
+
+        lhs_meet_rhs = self.meet_tensor[left_side, right_side]
+        if not torch.equal(lhs_meet_rhs,right_side):
+            return False
+        return True
 
     def compute_majmin_tensors(self):
         '''

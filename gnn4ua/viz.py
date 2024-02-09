@@ -24,7 +24,7 @@ from .utils import find_k_hop_subgraph, pyg_edges_to_nx_lattice
 
 def get_samples_to_plot(gnn, data, task_id, layer_id, figures_dir, all_labels,
                             concept_idx=0, n_concepts=5, random_state=42):
-    seed_everything(random_state)
+    seed_everything(int(random_state))
     y_pred, node_concepts, graph_concepts = gnn.forward(data)
     concepts = graph_concepts[layer_id]
     edge_indexes = pyg.utils.unbatch_edge_index(data.edge_index, data.batch)
