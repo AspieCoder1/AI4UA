@@ -15,7 +15,7 @@ def load_data(dataset_name, label_name, root_dir='../gnn4ua/datasets/', generali
         if not os.path.exists(file_name):
             raise FileNotFoundError(f'File {file_name} does not exist')
 
-        df = pd.read_json(file_name, lines=True)
+        df = pd.read_json(file_name)
         adjacency_matrices = df['Adj_matrix'].values.tolist()
 
         # Compute the indices of the nonzero elements in the adjacency matrices
