@@ -163,32 +163,36 @@ class Lattice:
     
     def is_agruesian_n_2(self):
         ### old slowest
-        # for (x, y, z) in itertools.product(range(1, self.size-1), range(1, self.size-1), range(1, self.size-1)):
-        #     if self.meet_tensor[x, self.join_tensor[y, z]] != self.join_tensor[self.meet_tensor[x, y], self.meet_tensor[x, z]]:
-                # return False
-        # return True
-        tensor_size = [self.size,self.size,self.size,self.size]
-        a = torch.tensor(np.arange(self.size)).to(device)
-        a_tensor = a.repeat_interleave(self.size ** 3 , dim=0).reshape(tensor_size)
-        b = torch.tensor(np.arange(self.size)).to(device)
-        b_tensor = b.repeat_interleave(self.size ** 3 , dim=0).reshape(tensor_size)
-        # c | d:
-        c_join_d_tensor = self.join_tensor.expand(tensor_size)
-        # b | (c | d)
-        b_join_c_join_d = self.join_tensor[b_tensor, c_join_d_tensor]
-        left_side = self.meet_tensor[a_tensor,b_join_c_join_d]
-
-        c = torch.tensor(np.arange(self.size)).to(device)
-        c_tensor = c.repeat_interleave(self.size ** 3 , dim=0).reshape(tensor_size)
-        a_join_c_tensor = self.join_tensor.expand(tensor_size)
-        b_join_d_tensor = self.join_tensor.expand(tensor_size)
-        ajc_meet_bjd = self.meet_tensor[a_join_c_tensor, b_join_d_tensor]
-        right_side = self.join_tensor[c_tensor, ajc_meet_bjd]
-
-        lhs_meet_rhs = self.meet_tensor[left_side, right_side]
-        if not torch.equal(lhs_meet_rhs,right_side):
-            return False
+        for (a, b, c, d) in itertools.product(range(1, self.size-1), range(1, self.size-1), range(1, self.size-1), range(1, self.size-1)):
+            LHS = self.meet_tensor[a, self.join_tensor[b, self.join_tensor[c, d]]]
+            RHS = self.join_tensor[c, self.meet_tensor[self.join_tensor[c, a], self.join_tensor[b, d]]]
+            if self.meet_tensor[LHS, RHS] != LHS:
+                return False
         return True
+        # tensor_size = [self.size,self.size,self.size,self.size]
+        # a = torch.tensor(np.arange(self.size)).to(device)
+        # a_tensor = a.repeat_interleave(self.size ** 3 , dim=0).reshape(tensor_size)
+        # b = torch.tensor(np.arange(self.size)).to(device)
+        # b_tensor = b.repeat_interleave(self.size ** 3 , dim=0).reshape(tensor_size)
+        # # c | d:
+        # c_join_d_tensor = self.join_tensor.expand(tensor_size)
+        # # b | (c | d)
+        # b_join_c_join_d = self.join_tensor[b_tensor, c_join_d_tensor]
+        # left_side = self.meet_tensor[a_tensor,b_join_c_join_d]
+
+        # c = torch.tensor(np.arange(self.size)).to(device)
+        # c_tensor = c.repeat_interleave(self.size ** 3 , dim=0).reshape(tensor_size)
+        # a_join_c_tensor = self.join_tensor.expand(tensor_size)
+        # b_join_d_tensor = self.join_tensor.expand(tensor_size)
+        # ajc_meet_bjd = self.meet_tensor[a_join_c_tensor, b_join_d_tensor]
+        # right_side = self.join_tensor[c_tensor, ajc_meet_bjd]
+
+        # lhs_meet_rhs = self.meet_tensor[left_side, right_side]
+        # lhs_join_rhs = self.join_tensor[left_side, right_side]
+        # if not (torch.equal(left_side,right_side)):
+        #     return False
+        # return True
+
 
     def compute_majmin_tensors(self):
         '''
