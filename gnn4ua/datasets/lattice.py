@@ -1,6 +1,9 @@
-import numpy as np
 import itertools
+
+import numpy as np
 import torch
+from typing import Generator, Self
+
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # device = torch.device("cpu")
 
@@ -246,3 +249,14 @@ class Lattice:
                             adj[i, k] = 0
         return adj
 
+    def sub_lattices(self) -> Generator[Self]:
+        """
+        Generates all sub-lattices
+        :return: Generator of sublattices
+        """
+        for i in range(1, 2 ** self.size - 1):
+            idx = list(map(lambda x: bool(x), str(bin(i)).split()))
+            yield Lattice(loe=self.loe[idx, idx])
+
+    def __contains__(self, item: Self) -> bool:
+        ...
