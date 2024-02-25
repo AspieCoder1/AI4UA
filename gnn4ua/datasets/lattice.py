@@ -1,8 +1,10 @@
 import itertools
+from typing import Generator, Self
 
+import networkx as nx
 import numpy as np
 import torch
-from typing import Generator, Self
+from networkx.algorithms.isomorphism import DiGraphMatcher
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # device = torch.device("cpu")
@@ -254,9 +256,13 @@ class Lattice:
         Generates all sub-lattices
         :return: Generator of sublattices
         """
-        for i in range(1, 2 ** self.size - 1):
-            idx = list(map(lambda x: bool(x), str(bin(i)).split()))
-            yield Lattice(loe=self.loe[idx, idx])
+        # open the data file
+        # loop lattices with <= num nodes
+        # check if lattice contains lattice in data file
 
     def __contains__(self, item: Self) -> bool:
-        ...
+        g1 = nx.from_numpy_array(self.adj, create_using=nx.DiGraph)
+        g2 = nx.from_numpy_array(item.adj, create_using=nx.DiGraph)
+        matcher = DiGraphMatcher(g1, g2)
+
+        return matcher.subgraph_is_isomorphic()
