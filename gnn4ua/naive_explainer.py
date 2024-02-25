@@ -1,13 +1,22 @@
-def brute_force_explainer(neg_concepts, examples):
+from typing import List
+
+from .datasets.lattice import Lattice
+
+
+def brute_force_explainer(pos_examples: List[Lattice],
+                          neg_examples: List[Lattice]) -> Lattice:
     """
-    Brute force explaination function to find minimal omitted lattice
+    Brute force explanation function to find minimal omitted lattice
     :return:
     """
 
-    # 1) Get most negative weighted graph concepts which are lattices from GNN
+    min_lattice = neg_examples[0]
 
-    # 2) Check all false examples in the dataset if any are sublattices from these
-    #    graph concepts
+    for neg_ex in neg_examples:
+        for pos_ex in pos_examples:
+            if neg_ex in pos_ex:
+                break
+        if neg_ex.size < min_lattice.size:
+            min_lattice = neg_ex
 
-    # 3) Check if this lattice is omitted by all of the true lattices
-    ...
+    return min_lattice
