@@ -251,15 +251,6 @@ class Lattice:
                             adj[i, k] = 0
         return adj
 
-    def sub_lattices(self) -> Generator[Self]:
-        """
-        Generates all sub-lattices
-        :return: Generator of sublattices
-        """
-        # open the data file
-        # loop lattices with <= num nodes
-        # check if lattice contains lattice in data file
-
     def __contains__(self, item: Self) -> bool:
         g1 = nx.from_numpy_array(self.adj, create_using=nx.DiGraph)
         g2 = nx.from_numpy_array(item.adj, create_using=nx.DiGraph)

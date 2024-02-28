@@ -19,7 +19,7 @@ seed_everything(42)
 def main():
     # we will save all results in this directory
     results_dir = f"results/metrics/"
-    metrics = ['auc', 'completeness']
+    metrics = ['auc']
 
     for metric in metrics:
         results = pd.read_csv(os.path.join(results_dir, f'{metric}.csv'))

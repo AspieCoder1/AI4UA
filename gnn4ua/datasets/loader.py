@@ -1,10 +1,103 @@
+import os
+import os.path as osp
+import shutil
+from enum import StrEnum, auto
+from typing import Literal
+
 import joblib
+import numpy as np
 import pandas as pd
 import torch
-import os
-import numpy as np
 import torch_geometric as pyg
+from torch_geometric.data import InMemoryDataset, Data
 
+
+class Targets(StrEnum):
+    Distributive = 'Distributive'
+    Modular = 'Modular'
+    Meet_SemiDistributive = 'Meet_SemiDistributive'
+    Join_SemiDistributive = 'Join_SemiDistributive'
+    multilabel = 'multilabel'
+
+
+class GeneralisationModes(StrEnum):
+    weak = auto()
+    strong = auto()
+
+
+class LatticeDataset(InMemoryDataset):
+    def __init__(self, root, transform=None, pre_transform=None, pre_filter=None,
+                 target: Targets = Targets.Distributive,
+                 generalisation_mode: GeneralisationModes = GeneralisationModes.strong,
+                 split: Literal['train', 'test'] = 'train'):
+        self.target = target
+        self.generalisation_mode = generalisation_mode
+        self.split = split
+        self.train_frac = 0.8
+        self.max_train_size = 8
+        super().__init__(root, transform, pre_transform, pre_filter)
+
+        assert target in Targets, f'{target} is not a valid target class'
+        assert generalisation_mode in GeneralisationModes, f'{generalisation_mode} is not a valid generalisation mode'
+        self.load(self.processed_paths[0])
+
+    @property
+    def raw_dir(self) -> str:
+        return osp.join(self.root, f'{self.target}_{self.generalisation_mode}', 'raw')
+
+    @property
+    def processed_dir(self) -> str:
+        return osp.join(self.root, f'{self.target}_{self.generalisation_mode}',
+                        'processed')
+
+    @property
+    def raw_file_names(self) -> str:
+        return 'samples_50_saved.json'
+
+    @property
+    def processed_file_names(self) -> str:
+        return f'data_{self.split}.pt'
+
+    def download(self):
+        shutil.copy("samples_50_saved.json", self.raw_dir)
+
+    def create_graph(self, row):
+        adj_matrix = np.array(row['Adj_matrix'])
+        symmetric_matrix_with_self_loops = adj_matrix + np.eye(
+            len(adj_matrix)) + adj_matrix.T
+        edge_indices = torch.nonzero(
+            torch.tensor(symmetric_matrix_with_self_loops, dtype=torch.float)
+        ).tolist()
+
+        edge_index = torch.tensor(edge_indices).t()
+        x = torch.ones((edge_index.max().item() + 1, 1))
+
+        if self.target is Targets.multilabel:
+            label_names = list(set(row.index).difference(
+                ['ID', 'Cardinality', 'LoE_matrix', 'Adj_matrix']))
+            y = row[label_names].values.astype(int)
+        else:
+            y = int(row[self.target])
+        return Data(x=x, edge_index=edge_index, y=y)
+
+    def process(self):
+        df = pd.read_json(osp.join(self.raw_dir, self.raw_file_names))
+
+        if self.generalisation_mode is GeneralisationModes.strong:
+            df_small_lattices = df[df['Cardinality'] < self.max_train_size]
+            df_max_size_lattices = df[df['Cardinality'] == self.max_train_size].sample(
+                frac=self.split_frac, random_state=42)
+            df_split = pd.concat([df_small_lattices, df_max_size_lattices])
+        else:
+            # Do a standard 80/20 train test split
+            split_frac = 0.8 if self.split == 'train' else 0.2
+            df_split = df.sample(frac=split_frac, random_state=42)
+
+        data_list = df_split.apply(self.create_graph, axis=1).to_list()
+        self.save(data_list, self.processed_paths[0])
+
+
+# Convert to InMemoryDataset to do loading sensibly and also handles the minibatching for us
 
 def load_data(dataset_name, label_name, root_dir='../gnn4ua/datasets/', generalization='strong',
               random_state=42, max_size_train=40, max_prob_train=0.8):
@@ -84,3 +177,8 @@ def load_data(dataset_name, label_name, root_dir='../gnn4ua/datasets/', generali
         data = joblib.load(os.path.join(root_dir, f'{dataset_name}_{label_name}_{generalization}.joblib'))
         data.validate(raise_on_error=True)
     return data
+
+
+if __name__ == '__main__':
+    test = LatticeDataset(root="data", target=Targets.multilabel, split='test')
+    print(next(iter(test)))

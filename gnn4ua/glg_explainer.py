@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 from torch_geometric.data import Data
+from torch_geometric.loader import DataLoader
 from torch_geometric.explain import Explainer
 from torch_geometric.explain.algorithm import PGExplainer
 from torch_geometric.explain.config import (
@@ -11,6 +12,7 @@ from torch_geometric.explain.config import (
     ModelReturnType,
     MaskType
 )
+from torch_geometric.utils import unbatch, unbatch_edge_index
 
 from gnn4ua.datasets.loader import load_data
 from gnn4ua.models import BlackBoxGNN
@@ -26,7 +28,7 @@ def generate_motifs(model: nn.Module, data: Data):
     """
     config = ModelConfig(
         task_level=ModelTaskLevel.graph,
-        mode=ModelMode.binary_classification,
+        mode=ModelMode.multiclass_classification,
         return_type=ModelReturnType.raw,
     )
 
@@ -41,14 +43,15 @@ def generate_motifs(model: nn.Module, data: Data):
     assert isinstance(explainer.algorithm, PGExplainer)
 
     for epoch in range(30):
-        explainer.algorithm.train(
-            epoch,
-            model,
-            data.x,
-            data.edge_index,
-            target=data.y,
-            index=0,
-        )
+            explainer.algorithm.train(
+                epoch,
+                model,
+                data.x,
+                data.edge_index,
+                target=data.y,
+                index=0,
+                batch=data.batch
+            )
 
     return explainer(data.x, data.edge_index, target=data.y, index=0)
 
@@ -70,7 +73,6 @@ def main():
                      max_size_train=max_size_train,
                      max_prob_train=max_prob_train)
 
-    print(data)
     gnn = BlackBoxGNN(data.x.shape[1], emb_size, data.y.shape[1], n_layers)
 
     gnn.load_state_dict(torch.load(

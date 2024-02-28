@@ -1,5 +1,6 @@
 import os
 import sys
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -9,7 +10,7 @@ from torch_geometric import seed_everything
 
 sys.path.append('..')
 from gnn4ua.datasets.loader import load_data
-from gnn4ua.models import BlackBoxGNN, GCoRe, HierarchicalGCN
+from gnn4ua.models import BlackBoxGNN, GCoRe, HierarchicalGCN, GraphNet
 
 # torch.autograd.set_detect_anomaly(True)
 seed_everything(42)
@@ -59,7 +60,7 @@ def main():
                 print(sum(train_index), sum(test_index))
 
                 # reset model weights for each fold
-                models = [
+                models: List[GraphNet] = [
                     HierarchicalGCN(data.x.shape[1], emb_size, data.y.shape[1],
                                     n_layers),
                     GCoRe(data.x.shape[1], emb_size, data.y.shape[1], n_layers),
@@ -85,7 +86,10 @@ def main():
                         gnn.train()
                         for epoch in range(train_epochs):
                             optimizer.zero_grad()
-                            y_pred, node_concepts, graph_concepts = gnn.forward(data)
+                            x, edge_index, batch = data.x, data.edge_index, data.batch
+                            y_pred, node_concepts, graph_concepts = gnn.forward(x,
+                                                                                edge_index,
+                                                                                batch)
                             if label_name != 'multilabel':
                                 y_pred = torch.log_softmax(y_pred, dim=-1)
 
@@ -125,7 +129,10 @@ def main():
                     gnn.load_state_dict(torch.load(model_path))
                     for param in gnn.parameters():
                         param.requires_grad = False
-                    y_pred, node_concepts, graph_concepts = gnn.forward(data)
+
+                    x, edge_index, batch = data.x, data.edge_index, data.batch
+                    y_pred, node_concepts, graph_concepts = gnn.forward(x, edge_index,
+                                                                        batch)
                     if label_name != 'multilabel':
                         y_pred = torch.log_softmax(y_pred, dim=-1)
 

@@ -81,7 +81,7 @@ def generate_all_lattices(n, max_cardinality_to_generate_all, num_lattices_to_sa
 
 def prepare_dataset_json(lattices):
     # FIELD: ID, graph_cardinality; LoE_mat; Adj_mat; distribut; modularity; meet_semiDistributive; join_semiDistributive; semiDistributive;
-    with open("samples_try.json", "w") as outfile:
+    with open("samples_50_saved.json", "w") as outfile:
         outfile.write("[")
         for i, lattice in enumerate(lattices):
             dictionary = {
@@ -94,7 +94,7 @@ def prepare_dataset_json(lattices):
                 "Meet_SemiDistributive": lattice.meet_semi_dist,
                 "Join_SemiDistributive": lattice.join_semi_dist,
                 "SemiDistributive": lattice.semi_dist,
-                "Agruesian_n2": lattice.agru_n2
+                # "Agruesian_n2": lattice.agru_n2
             }
             # create and write json lattice
             json_object = json.dumps(dictionary)

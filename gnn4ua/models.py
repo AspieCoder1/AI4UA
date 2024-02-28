@@ -7,6 +7,8 @@ from torch_geometric.nn.norm import BatchNorm
 from torch.nn import Linear, ModuleList, LeakyReLU
 
 
+# Make all models binary classification task if possible
+
 class GraphNet(torch.nn.Module):
     def __init__(self, in_features, emb_size, n_classes, n_layers=8):
         super(GraphNet, self).__init__()
@@ -17,7 +19,7 @@ class GraphNet(torch.nn.Module):
 
 
     @abc.abstractmethod
-    def forward(self, data):
+    def forward(self, x, edge_index, batch):
         raise NotImplementedError
 
 
@@ -51,8 +53,7 @@ class GCoRe(GraphNet):
             Linear(emb_size, n_classes)
         )
 
-    def forward(self, data):
-        x, edge_index, batch = data.x, data.edge_index, data.batch
+    def forward(self, x, edge_index, batch):
 
         n_layers = len(self.graph_layers)
         for i, layer in enumerate(self.graph_layers):
@@ -61,7 +62,7 @@ class GCoRe(GraphNet):
                 x = F.leaky_relu(x)
 
         node_concepts = F.gumbel_softmax(x, tau=self.temperature, hard=self.hard)
-        graph_concepts = global_max_pool(node_concepts, batch)
+        graph_concepts = global_add_pool(node_concepts, batch)
         x = self.dense_layers(graph_concepts)
         return x, node_concepts, graph_concepts
 
@@ -99,15 +100,14 @@ class HierarchicalGCN(GraphNet):
             Linear(emb_size, n_classes)
         )
 
-    def forward(self, data):
-        x, edge_index, batch = data.x, data.edge_index, data.batch
+    def forward(self, x, edge_index, batch):
 
         node_concepts = []
         graph_concepts = []
         for i, layer in enumerate(self.graph_layers):
             x = layer(x, edge_index)
             node_concept = F.gumbel_softmax(x, tau=self.temperature, hard=self.hard)
-            graph_concept = global_max_pool(node_concept, batch)
+            graph_concept = global_add_pool(node_concept, batch)
             node_concepts.append(node_concept)
             graph_concepts.append(graph_concept)
             x = F.leaky_relu(x)
@@ -150,15 +150,13 @@ class BlackBoxGNN(GraphNet):
             Linear(emb_size, n_classes)
         )
 
-    def forward(self, data):
-        x, edge_index, batch = data.x, data.edge_index, data.batch
-
+    def forward(self, x, edge_index, batch):
         n_layers = len(self.graph_layers)
         for i, layer in enumerate(self.graph_layers):
             x = layer(x, edge_index)
             if i < n_layers - 1:
                 x = F.leaky_relu(x)
 
-        cemb = global_max_pool(x, batch)
+        cemb = global_add_pool(x, batch)
         x = self.dense_layers(cemb)
         return x, None, cemb
