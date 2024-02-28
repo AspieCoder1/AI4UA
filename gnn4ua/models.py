@@ -115,11 +115,11 @@ class HierarchicalGCN(GraphNet):
         x = self.dense_layers(graph_concept)
         return x, node_concepts, graph_concepts
 
-    def internal_loss(self, graph_concepts, y, loss_form, data_index):
+    def internal_loss(self, graph_concepts, y, loss_form):
         loss = 0
         for graph_concept, classification_layer in zip(graph_concepts[:-1], self.internal_classification_layers):
-            y_pred = classification_layer(graph_concept[data_index])
-            loss += loss_form(y_pred, y[data_index])
+            y_pred = classification_layer(graph_concept)
+            loss += loss_form(y_pred, y)
         return loss
 
 class BlackBoxGNN(GraphNet):

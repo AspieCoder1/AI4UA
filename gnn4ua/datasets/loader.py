@@ -33,7 +33,7 @@ class LatticeDataset(InMemoryDataset):
         self.target = target
         self.generalisation_mode = generalisation_mode
         self.split = split
-        self.train_frac = 0.8
+        self.split_frac = 0.8 if self.split == 'train' else 0.2
         self.max_train_size = 8
         super().__init__(root, transform, pre_transform, pre_filter)
 
@@ -59,7 +59,7 @@ class LatticeDataset(InMemoryDataset):
         return f'data_{self.split}.pt'
 
     def download(self):
-        shutil.copy("samples_50_saved.json", self.raw_dir)
+        shutil.copy("../gnn4ua/datasets/samples_50_saved.json", self.raw_dir)
 
     def create_graph(self, row):
         adj_matrix = np.array(row['Adj_matrix'])
@@ -75,9 +75,9 @@ class LatticeDataset(InMemoryDataset):
         if self.target is Targets.multilabel:
             label_names = list(set(row.index).difference(
                 ['ID', 'Cardinality', 'LoE_matrix', 'Adj_matrix']))
-            y = row[label_names].values.astype(int)
+            y = torch.LongTensor([row[label_names].to_list()])
         else:
-            y = int(row[self.target])
+            y = torch.LongTensor(row[self.target])
         return Data(x=x, edge_index=edge_index, y=y)
 
     def process(self):
@@ -90,11 +90,21 @@ class LatticeDataset(InMemoryDataset):
             df_split = pd.concat([df_small_lattices, df_max_size_lattices])
         else:
             # Do a standard 80/20 train test split
-            split_frac = 0.8 if self.split == 'train' else 0.2
-            df_split = df.sample(frac=split_frac, random_state=42)
+
+            df_split = df.sample(frac=self.split_frac, random_state=42)
 
         data_list = df_split.apply(self.create_graph, axis=1).to_list()
         self.save(data_list, self.processed_paths[0])
+
+    @property
+    def num_features(self) -> int:
+        return 1
+
+    @property
+    def num_classes(self) -> int:
+        if self.target is Targets.multilabel:
+            return 5
+        return 1
 
 
 # Convert to InMemoryDataset to do loading sensibly and also handles the minibatching for us
