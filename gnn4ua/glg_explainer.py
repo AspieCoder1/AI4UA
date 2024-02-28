@@ -1,7 +1,6 @@
 import torch
 from torch import nn
 from torch_geometric.data import Data
-from torch_geometric.loader import DataLoader
 from torch_geometric.explain import Explainer
 from torch_geometric.explain.algorithm import PGExplainer
 from torch_geometric.explain.config import (
@@ -10,9 +9,8 @@ from torch_geometric.explain.config import (
     ModelTaskLevel,
     ModelMode,
     ModelReturnType,
-    MaskType
+    MaskType,
 )
-from torch_geometric.utils import unbatch, unbatch_edge_index
 
 from gnn4ua.datasets.loader import load_data
 from gnn4ua.models import BlackBoxGNN
@@ -43,15 +41,15 @@ def generate_motifs(model: nn.Module, data: Data):
     assert isinstance(explainer.algorithm, PGExplainer)
 
     for epoch in range(30):
-            explainer.algorithm.train(
-                epoch,
-                model,
-                data.x,
-                data.edge_index,
-                target=data.y,
-                index=0,
-                batch=data.batch
-            )
+        explainer.algorithm.train(
+            epoch,
+            model,
+            data.x,
+            data.edge_index,
+            target=data.y,
+            index=0,
+            batch=data.batch
+        )
 
     return explainer(data.x, data.edge_index, target=data.y, index=0)
 

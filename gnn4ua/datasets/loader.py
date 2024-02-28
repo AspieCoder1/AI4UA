@@ -77,7 +77,7 @@ class LatticeDataset(InMemoryDataset):
                 ['ID', 'Cardinality', 'LoE_matrix', 'Adj_matrix']))
             y = torch.LongTensor([row[label_names].to_list()])
         else:
-            y = torch.LongTensor(row[self.target])
+            y = torch.LongTensor([row[self.target]]).unsqueeze(dim=-1)
         return Data(x=x, edge_index=edge_index, y=y)
 
     def process(self):

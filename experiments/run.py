@@ -168,8 +168,8 @@ def main():
 
                     results.append(
                         [target, generalisation, gnn.__class__.__name__,
-                         metrics_test["test/auroc"],
-                         metrics_train["train/auroc"], n_layers, temperature, emb_size,
+                         metrics_test["test/auroc"].item(),
+                         metrics_train["train/auroc"].item(), n_layers, temperature, emb_size,
                          learning_rate,
                          train_epochs, max_size_train, max_prob_train])
                     pd.DataFrame(results, columns=cols).to_csv(
