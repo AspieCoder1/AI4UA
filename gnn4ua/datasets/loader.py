@@ -95,8 +95,7 @@ class LatticeDataset(InMemoryDataset):
             df_train = pd.concat([df_small_lattices, df_medium_lattices_train])
             df_test = pd.concat([df_large_lattices, df_medium_lattices_test])
         else:
-            # Do a standard 80/20 train test split
-            df_train, df_test = train_test_split(df, train_size=0.7, random_state=42)
+            df_train, df_test = train_test_split(df, train_size=0.8, random_state=42)
 
         df_split = df_train if self.split == 'train' else df_test
 
