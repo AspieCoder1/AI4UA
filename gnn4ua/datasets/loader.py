@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import torch
 import torch_geometric as pyg
+from sklearn.model_selection import train_test_split
 from torch_geometric.data import InMemoryDataset, Data
 
 
@@ -85,13 +86,19 @@ class LatticeDataset(InMemoryDataset):
 
         if self.generalisation_mode is GeneralisationModes.strong:
             df_small_lattices = df[df['Cardinality'] < self.max_train_size]
-            df_max_size_lattices = df[df['Cardinality'] == self.max_train_size].sample(
-                frac=self.split_frac, random_state=42)
-            df_split = pd.concat([df_small_lattices, df_max_size_lattices])
+            df_large_lattices = df[df['Cardinality'] > self.max_train_size]
+            df_medium_lattices_train, df_medium_lattices_test = train_test_split(
+                df[df['Cardinality'] == self.max_train_size], train_size=0.8,
+                random_state=42)
+
+            # Construct the train and test datasets
+            df_train = pd.concat([df_small_lattices, df_medium_lattices_train])
+            df_test = pd.concat([df_large_lattices, df_medium_lattices_test])
         else:
             # Do a standard 80/20 train test split
+            df_train, df_test = train_test_split(df, train_size=0.7, random_state=42)
 
-            df_split = df.sample(frac=self.split_frac, random_state=42)
+        df_split = df_train if self.split == 'train' else df_test
 
         data_list = df_split.apply(self.create_graph, axis=1).to_list()
         self.save(data_list, self.processed_paths[0])
