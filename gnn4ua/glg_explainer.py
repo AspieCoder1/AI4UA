@@ -1,6 +1,4 @@
-import networkx as nx
 import torch
-from matplotlib import pyplot as plt
 from torch import nn
 from torch_geometric.explain import Explainer
 from torch_geometric.explain.algorithm import PGExplainer
@@ -10,10 +8,10 @@ from torch_geometric.explain.config import (
     ModelTaskLevel,
     ModelMode,
     ModelReturnType,
-    MaskType,
+    MaskType, ThresholdConfig,
+    ThresholdType
 )
 from torch_geometric.loader import DataLoader
-from torch_geometric.utils import to_networkx
 
 from gnn4ua.datasets.loader import (LatticeDataset, Targets,
                                     GeneralisationModes, )
@@ -36,30 +34,30 @@ def generate_motifs(model: nn.Module, train_data, test_data):
 
     explainer = Explainer(
         model=model,
-        algorithm=PGExplainer(epochs=1),
+        algorithm=PGExplainer(epochs=10),
         explanation_type=ExplanationType.phenomenon,
         model_config=config,
         edge_mask_type=MaskType.object,
+        # threshold_config=ThresholdConfig(
+        #     threshold_type=ThresholdType.hard,
+        #     value=0.
+        # )
     )
 
     assert isinstance(explainer.algorithm, PGExplainer)
 
-    train_sample = next(iter(DataLoader(train_data, batch_size=1)))
-
-    for epoch in range(1):
-        # for train_sample in DataLoader(train_data, batch_size=1):
+    test_sample = next(iter(DataLoader(test_data, batch_size=1, shuffle=False)))
+    # for train_sample in DataLoader(train_data, batch_size=1):
+    for epoch in range(10):
         explainer.algorithm.train(
             epoch,
             model,
-            train_sample.x,
-            train_sample.edge_index,
-            target=train_sample.y,
+            test_sample.x,
+            test_sample.edge_index,
+            target=test_sample.y,
             index=0,
-            batch=train_sample.batch
+            batch=test_sample.batch
         )
-
-    test_sample = next(iter(DataLoader(test_data, batch_size=1, shuffle=False)))
-    print(test_sample.y)
     return explainer(test_sample.x, test_sample.edge_index, target=test_sample.y,
                      batch=test_sample.batch,
                      index=0)
@@ -84,8 +82,10 @@ def main():
 
     motifs = generate_motifs(gnn, train_data, test_data)
     print(motifs)
-
     motifs.visualize_graph()
+    print(motifs.edge_mask)
+
+    # motifs.visualize_graph()
 
 
 if __name__ == "__main__":
