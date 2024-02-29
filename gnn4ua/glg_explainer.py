@@ -1,6 +1,7 @@
+import networkx as nx
 import torch
+from matplotlib import pyplot as plt
 from torch import nn
-from torch_geometric.data import Data
 from torch_geometric.explain import Explainer
 from torch_geometric.explain.algorithm import PGExplainer
 from torch_geometric.explain.config import (
@@ -11,12 +12,15 @@ from torch_geometric.explain.config import (
     ModelReturnType,
     MaskType,
 )
+from torch_geometric.loader import DataLoader
+from torch_geometric.utils import to_networkx
 
-from gnn4ua.datasets.loader import load_data
+from gnn4ua.datasets.loader import (LatticeDataset, Targets,
+                                    GeneralisationModes, )
 from gnn4ua.models import BlackBoxGNN
 
 
-def generate_motifs(model: nn.Module, data: Data):
+def generate_motifs(model: nn.Module, train_data, test_data):
     """
     Uses PGExplainer to generate motif features from the datasets.
 
@@ -26,13 +30,13 @@ def generate_motifs(model: nn.Module, data: Data):
     """
     config = ModelConfig(
         task_level=ModelTaskLevel.graph,
-        mode=ModelMode.multiclass_classification,
+        mode=ModelMode.binary_classification,
         return_type=ModelReturnType.raw,
     )
 
     explainer = Explainer(
         model=model,
-        algorithm=PGExplainer(epochs=30),
+        algorithm=PGExplainer(epochs=1),
         explanation_type=ExplanationType.phenomenon,
         model_config=config,
         edge_mask_type=MaskType.object,
@@ -40,45 +44,52 @@ def generate_motifs(model: nn.Module, data: Data):
 
     assert isinstance(explainer.algorithm, PGExplainer)
 
-    for epoch in range(30):
-        explainer.algorithm.train(
-            epoch,
-            model,
-            data.x,
-            data.edge_index,
-            target=data.y,
-            index=0,
-            batch=data.batch
-        )
+    for epoch in range(1):
+        for train_sample in DataLoader(train_data, batch_size=1):
+            explainer.algorithm.train(
+                epoch,
+                model,
+                train_sample.x,
+                train_sample.edge_index,
+                target=train_sample.y,
+                index=0,
+                batch=train_sample.batch
+            )
 
-    return explainer(data.x, data.edge_index, target=data.y, index=0)
+    test_sample = next(iter(DataLoader(test_data, batch_size=1, shuffle=False)))
+    return explainer(test_sample.x, test_sample.edge_index, target=test_sample.y,
+                     batch=test_sample.batch,
+                     index=0)
 
 
 def main():
-    dataset = 'samples_50_saved'
-    label_name = 'Distributive'
-    generalization = 'strong',
-    random_state = 102
-    max_size_train = 8
-    max_prob_train = 0.8
     n_layers = 8
     emb_size = 16
 
-    data = load_data(dataset, label_name=label_name,
-                     root_dir='../gnn4ua/datasets/',
-                     generalization=generalization,
-                     random_state=random_state,
-                     max_size_train=max_size_train,
-                     max_prob_train=max_prob_train)
+    train_data = LatticeDataset(root="../experiments/data", target=Targets.Distributive,
+                                generalisation_mode=GeneralisationModes.weak,
+                                split='train')
+    test_data = LatticeDataset(root="../experiments/data", target=Targets.Distributive,
+                               generalisation_mode=GeneralisationModes.weak,
+                               split='test')
 
-    gnn = BlackBoxGNN(data.x.shape[1], emb_size, data.y.shape[1], n_layers)
+    gnn = BlackBoxGNN(train_data.num_features, emb_size, train_data.num_classes,
+                      n_layers)
 
     gnn.load_state_dict(torch.load(
         '../experiments/results/task_Distributive/models/BlackBoxGNN_generalization_strong_seed_102_temperature_1_embsize_16.pt'))
 
-    motifs = generate_motifs(gnn, data)
+    motifs = generate_motifs(gnn, train_data, test_data)
 
-    print(motifs.get_explanation_subgraph())
+    print(motifs.get_explanation_subgraph().edge_index)
+
+    G = to_networkx(motifs.get_explanation_subgraph())
+
+    print(G)
+
+    ax = plt.subplot(111)
+    nx.draw(G, ax=ax)
+    plt.show()
 
 
 if __name__ == "__main__":
