@@ -1,6 +1,5 @@
 import os
 import os.path as osp
-import shutil
 from enum import StrEnum, auto
 from typing import Literal
 
@@ -10,7 +9,7 @@ import pandas as pd
 import torch
 import torch_geometric as pyg
 from sklearn.model_selection import train_test_split
-from torch_geometric.data import InMemoryDataset, Data
+from torch_geometric.data import InMemoryDataset, Data, download_url
 
 
 class Targets(StrEnum):
@@ -60,7 +59,9 @@ class LatticeDataset(InMemoryDataset):
         return f'data_{self.split}.pt'
 
     def download(self):
-        shutil.copy("../gnn4ua/datasets/samples_50_saved.json", self.raw_dir)
+        download_url(
+            url='https://drive.google.com/uc?export=download&id=1KP67FfoS_0IjuwSmV_8QODvDmL5SLhwp',
+            folder=self.raw_dir, filename='samples_50_saved.json')
 
     def create_graph(self, row):
         adj_matrix = np.array(row['Adj_matrix'])
@@ -196,5 +197,5 @@ def load_data(dataset_name, label_name, root_dir='../gnn4ua/datasets/', generali
 
 
 if __name__ == '__main__':
-    test = LatticeDataset(root="data", target=Targets.multilabel, split='test')
+    test = LatticeDataset(root="data_test", target=Targets.multilabel, split='test')
     print(next(iter(test)))
