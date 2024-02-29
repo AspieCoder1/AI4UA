@@ -44,19 +44,22 @@ def generate_motifs(model: nn.Module, train_data, test_data):
 
     assert isinstance(explainer.algorithm, PGExplainer)
 
+    train_sample = next(iter(DataLoader(train_data, batch_size=1)))
+
     for epoch in range(1):
-        for train_sample in DataLoader(train_data, batch_size=1):
-            explainer.algorithm.train(
-                epoch,
-                model,
-                train_sample.x,
-                train_sample.edge_index,
-                target=train_sample.y,
-                index=0,
-                batch=train_sample.batch
-            )
+        # for train_sample in DataLoader(train_data, batch_size=1):
+        explainer.algorithm.train(
+            epoch,
+            model,
+            train_sample.x,
+            train_sample.edge_index,
+            target=train_sample.y,
+            index=0,
+            batch=train_sample.batch
+        )
 
     test_sample = next(iter(DataLoader(test_data, batch_size=1, shuffle=False)))
+    print(test_sample.y)
     return explainer(test_sample.x, test_sample.edge_index, target=test_sample.y,
                      batch=test_sample.batch,
                      index=0)
@@ -80,16 +83,9 @@ def main():
         '../experiments/results/task_Distributive/models/BlackBoxGNN_generalization_strong_seed_102_temperature_1_embsize_16.pt'))
 
     motifs = generate_motifs(gnn, train_data, test_data)
+    print(motifs)
 
-    print(motifs.get_explanation_subgraph().edge_index)
-
-    G = to_networkx(motifs.get_explanation_subgraph())
-
-    print(G)
-
-    ax = plt.subplot(111)
-    nx.draw(G, ax=ax)
-    plt.show()
+    motifs.visualize_graph()
 
 
 if __name__ == "__main__":
