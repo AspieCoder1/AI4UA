@@ -17,6 +17,7 @@ from torch_geometric.utils import to_undirected
 from gnn4ua.datasets.loader import (LatticeDataset, Targets,
                                     GeneralisationModes, )
 from gnn4ua.models import BlackBoxGNN
+from tqdm import tqdm
 
 
 def generate_motifs(model: nn.Module, train_data, test_data):
@@ -47,8 +48,8 @@ def generate_motifs(model: nn.Module, train_data, test_data):
 
     assert isinstance(explainer.algorithm, PGExplainer)
 
-    for train_sample in DataLoader(train_data, batch_size=1, shuffle=True):
-        for epoch in range(10):
+    for epoch in range(10):
+        for train_sample in tqdm(DataLoader(train_data, batch_size=1, shuffle=True)):
             explainer.algorithm.train(
                 epoch,
                 model,
@@ -83,15 +84,11 @@ def main():
         '../experiments/results/task_Distributive/models/BlackBoxGNN_generalization_strong_seed_102_temperature_1_embsize_16.pt'))
 
     motifs = generate_motifs(gnn, train_data, test_data)
-    print(motifs.edge_mask)
 
     new_edge_index, new_edge_mask = to_undirected(edge_index=motifs.edge_index,
                                                   edge_attr=motifs.edge_mask,
                                                   reduce='mean')
-    print(new_edge_mask)
     motifs.update({'edge_index': new_edge_index, 'edge_mask': new_edge_mask})
-    motifs = motifs.threshold(threshold_type=ThresholdType.hard, value=0.1)
-    print(motifs.edge_mask)
     motifs.visualize_graph()
 
 
