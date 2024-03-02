@@ -1,5 +1,6 @@
 import click
 
+from experiments.run import run_gnn_training
 from gnn4ua.datasets.loader import GeneralisationModes, Targets
 from gnn4ua.local_feature_extractor import generate_local_motif
 from gnn4ua.run_glgexplainer import run_glgexplainer
@@ -9,6 +10,12 @@ from gnn4ua.run_glgexplainer import run_glgexplainer
 def cli():
     ...
 
+
+@click.command(
+    help="Train BlackBoxGNN and save the results"
+)
+def train_gnns():
+    run_gnn_training()
 
 @cli.command(
     help="Extracts local motifs from the classifier to be used as a basis for "

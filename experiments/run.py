@@ -21,7 +21,7 @@ from gnn4ua.models import BlackBoxGNN, GraphNet
 seed_everything(42)
 
 
-def main():
+def run_gnn_training():
     # hyperparameters
     random_states = np.random.RandomState(42).randint(0, 1000, size=5)
     dataset = 'samples_50_saved'
@@ -180,4 +180,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    run_gnn_training()
