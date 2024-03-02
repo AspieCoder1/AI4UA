@@ -6,8 +6,8 @@ import torch
 import torch_geometric.transforms as T
 
 import glgexplainer.utils as utils
-from glgexplainer.models import LEN, LEEmbedder, GLGExplainer
-from glgexplainer.utils import LocalExplanationsDataset
+from glgexplainer.local_explainations import read_lattice
+from glgexplainer.models import LEN, GLGExplainer, LEEmbedder
 from gnn4ua.datasets.loader import Targets, GeneralisationModes
 
 
@@ -31,45 +31,41 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes):
     with open(f"config/{DATASET_NAME}_params.json") as json_file:
         hyper_params = json.load(json_file)
 
-    train_adjs, train_labels, belonging_train = read_lattice_dataset(task,
-                                                                     generalisation_mode,
-                                                                     split='train')
-    test_adjs, test_labels, belonging_test = read_lattice_dataset(task,
-                                                                  generalisation_mode,
-                                                                  split='test')
+    adjs_train, edge_weights_train, ori_classes_train, belonging_train, summary_predictions_train, le_classes_train = read_lattice(
+        task=task,
+        mode=generalisation_mode,
+        split='train'
+    )
+    adjs_test, edge_weights_test, ori_classes_test, belonging_test, summary_predictions_test, le_classes_test = read_lattice(
+        task=task,
+        mode=generalisation_mode,
+        split='test'
+    )
 
     device = "cpu"  # torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     transform = T.Compose([
         T.NormalizeFeatures(),
     ])
 
-    dataset_train = LocalExplanationsDataset(
-        "glg_data",
-        adjs=train_adjs,
-        feature_type='same',
-        belonging=belonging_train,
-        y=train_labels,
-        task_y=train_labels,
-        transform=transform
-    )
-    dataset_test = LocalExplanationsDataset(
-        "glg_data",
-        adjs=test_adjs,
-        feature_type='same',
-        belonging=belonging_test,
-        y=train_labels,
-        task_y=test_labels,
-        transform=transform
-    )
+    dataset_train = utils.LocalExplanationsDataset("", adjs_train, "same",
+                                                   transform=transform,
+                                                   y=le_classes_train,
+                                                   belonging=belonging_train,
+                                                   task_y=ori_classes_train)
+    dataset_test = utils.LocalExplanationsDataset("", adjs_test, "same",
+                                                  transform=transform,
+                                                  y=le_classes_test,
+                                                  belonging=belonging_test,
+                                                  task_y=ori_classes_test)
 
     train_group_loader = utils.build_dataloader(dataset_train, belonging_train,
                                                 num_input_graphs=128)
     test_group_loader = utils.build_dataloader(dataset_test, belonging_test,
                                                num_input_graphs=256)
-    print(dataset_train.data)
 
     torch.manual_seed(42)
 
+    torch.manual_seed(42)
     len_model = LEN(hyper_params["num_prototypes"],
                     hyper_params["LEN_temperature"],
                     remove_attention=hyper_params["remove_attention"]).to(device)
@@ -78,11 +74,12 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes):
                           num_hidden=hyper_params["dim_prototypes"]).to(device)
     expl = GLGExplainer(len_model,
                         le_model,
-                        device,
+                        device=device,
                         hyper_params=hyper_params,
-                        classes_names=['NonDistributive', 'Distributive'],
+                        classes_names=['NotDistributive', 'Distributive'],
                         dataset_name=DATASET_NAME,
-                        num_classes=2
+                        num_classes=len(
+                            train_group_loader.dataset.data.task_y.unique())
                         ).to(device)
 
     expl.iterate(train_group_loader, test_group_loader, plot=False)
