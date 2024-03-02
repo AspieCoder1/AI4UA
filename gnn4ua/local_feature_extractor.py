@@ -13,7 +13,6 @@ from torch_geometric.explain.config import (
     ModelMode,
     ModelReturnType,
     MaskType,
-    ThresholdType, ThresholdConfig,
 )
 from torch_geometric.loader import DataLoader
 from torch_geometric.utils import to_dense_adj
@@ -48,14 +47,10 @@ def generate_motifs(model: nn.Module, train_data, test_data,
 
     explainer = Explainer(
         model=model,
-        algorithm=PGExplainer(epochs=1),
+        algorithm=PGExplainer(epochs=10),
         explanation_type=ExplanationType.phenomenon,
         model_config=config,
         edge_mask_type=MaskType.object,
-        threshold_config=ThresholdConfig(
-            threshold_type=ThresholdType.topk_hard,
-            value=16
-        )
     )
 
     assert isinstance(explainer.algorithm, PGExplainer)
@@ -63,7 +58,7 @@ def generate_motifs(model: nn.Module, train_data, test_data,
     train_loader = DataLoader(train_data, batch_size=1, shuffle=True)
     test_loader = DataLoader(test_data, batch_size=1)
 
-    for epoch in range(1):
+    for epoch in range(10):
         for train_sample in tqdm(train_loader):
             for index in range(train_data.num_classes):
                 explainer.algorithm.train(
@@ -101,9 +96,7 @@ def generate_motifs(model: nn.Module, train_data, test_data,
                             batch=test_sample.batch,
                             index=0)
 
-            motif = out.get_explanation_subgraph()
-
-            explain_list_test.append(to_dense_adj(motif.edge_index))
+            explain_list_test.append(to_dense_adj(out.edge_index, out.edge_mask))
             explain_list_test_classes.append(torch.argmax(test_sample.y).item())
 
     np.savez_compressed(f'{path}/x_test', *explain_list_test)

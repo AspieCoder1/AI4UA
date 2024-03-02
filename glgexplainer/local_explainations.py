@@ -1,11 +1,15 @@
-import numpy as np
 import copy
 import os
+from collections import defaultdict
+from typing import Literal
+
 import networkx as nx
+import numpy as np
 from networkx.algorithms import isomorphism
 from networkx.generators import classic
-from collections import defaultdict
+
 import utils
+from gnn4ua.datasets.loader import GeneralisationModes, Targets
 
 base = "../local_explanations/"
 
@@ -41,6 +45,26 @@ mutag_classes_names = ["NO2", "Others"]
 priori_etn_classes_names = ["M", "N", "NA", "PAT", "NP", "MN", "MP", "OTHERS"]
 posteriori_etn_classes_names = ["N", "M", "NA", "NP", "NM", "MA", "NMA", "O"]
 
+# Patterns for Lattice extraction
+pattern_M3 = nx.Graph()
+pattern_M3.add_edges_from([
+    (0, 1),
+    (0, 2),
+    (0, 3),
+    (1, 4),
+    (2, 4),
+    (3, 4)
+])
+pattern_N5 = nx.Graph()
+pattern_N5.add_edges_from([
+    (0, 1),
+    (0, 2),
+    (1, 3),
+    (2, 4),
+    (3, 4)
+])
+
+
 
 def elbow_method(weights, index_stopped=None, min_num_include=7, backup=None):
     sorted_weights = sorted(weights, reverse=True)
@@ -60,6 +84,93 @@ def elbow_method(weights, index_stopped=None, min_num_include=7, backup=None):
                     index_stopped.append(stop)
                 break
     return stop
+
+
+def assign_class_lattice(pattern_matched):
+    if len(pattern_matched) == 0:
+        return 2
+
+    if len(pattern_matched) == 1:
+        return pattern_matched[0]
+
+    return 3
+
+
+def label_explanation_lattice(G_orig, pattern_N5, pattern_M3, return_raw=False):
+    pattern_matched = []
+    for i, pattern in enumerate([pattern_N5, pattern_M3]):
+        GM = isomorphism.GraphMatcher(G_orig, pattern)
+        if GM.subgraph_is_isomorphic():
+            pattern_matched.append(i)
+    if return_raw:
+        return pattern_matched
+    else:
+        return assign_class_lattice(pattern_matched)
+
+
+def read_lattice(explainer="PGExplainer", target: Targets = Targets.Distributive,
+                 mode: GeneralisationModes = GeneralisationModes.strong,
+                 split: Literal['train', 'test'] = 'train', min_num_include: int = 7,
+                 evaluate_method=False):
+    base_path = f"local_features/{explainer}/{target}_{mode}/"
+    adjs, edge_weights, index_stopped = [], [], []
+    ori_adjs, ori_edge_weights, ori_classes, belonging, ori_predictions = [], [], [], [], []
+    precomputed_embeddings, gnn_embeddings = [], []
+    total_graph_labels, total_cc_labels, le_classes = [], [], []
+
+    global summary_predictions
+    summary_predictions = {"correct": [], "wrong": []}
+
+    labels = np.load(f'{base_path}/y_{split}.npy', allow_pickle=True)
+
+    with np.load(f'{base_path}/x_{split}.npz', allow_pickle=True) as data:
+        num_multi_shapes_removed, num_class_relationship_broken, cont_num_iter, num_iter = 0, 0, 0, 0
+        for idx, adj in enumerate(data.values()):
+            G_orig = nx.Graph(adj)
+            cut = elbow_method(np.triu(adj).flatten(), index_stopped,
+                               min_num_include)
+
+            masked = copy.deepcopy(adj)
+            masked[masked <= cut] = 0
+            masked[masked > cut] = 1
+            G = nx.Graph(masked)
+            added = 0
+            graph_labels = label_explanation(G_orig, pattern_N5, pattern_M3,
+                                             return_raw=True)
+            summary_predictions["correct"].append(assign_class(graph_labels))
+            total_cc_labels.append([])
+            cc_labels = []
+            for cc in nx.connected_components(G):
+                G1 = G.subgraph(cc)
+                if not nx.diameter(G1) == len(G1.edges()):  # if is not a line
+                    cc_lbl = label_explanation(G1, house, grid, wheel,
+                                               return_raw=True)
+                    added += 1
+                    cc_labels.extend(cc_lbl)
+                    total_cc_labels[-1].extend(cc_lbl)
+                    adjs.append(nx.to_numpy_array(G1))
+                    edge_weights.append(nx.get_edge_attributes(G1, "weight"))
+                    belonging.append(idx)
+                    le_classes.append(assign_class(cc_lbl))
+
+            if not total_cc_labels[-1]:
+                del total_cc_labels[-1]
+            if added:
+                if graph_labels != []: total_graph_labels.append(graph_labels)
+                num_iter += 1
+                ori_adjs.append(adj)
+                ori_edge_weights.append(nx.get_edge_attributes(g, "weight"))
+                ori_classes.append(labels[idx])  # c | gnn_pred
+                for lbl in graph_labels:
+                    if lbl not in cc_labels:
+                        num_class_relationship_broken += 1
+                        break
+    belonging = utils.normalize_belonging(belonging)
+    if evaluate_method:
+        evaluate_cutting(ori_adjs, adjs)
+        print("num_class_relationship_broken: ", num_class_relationship_broken,
+              " num_multi_shapes_removed:", num_multi_shapes_removed)
+    return adjs, edge_weights, ori_classes, belonging, summary_predictions, le_classes  # (total_graph_labels, total_cc_labels)
 
 
 def assign_class(pattern_matched):
@@ -96,7 +207,7 @@ def label_explanations(adjs, num_graphs):
     classes_names = ["house", "grid", "wheel", "ba", "house+grid", "house+wheel",
                      "wheel+grid", "all"]
     for k in range(num_graphs):
-        G = nx.from_numpy_matrix(adjs[k])
+        G = nx.Graph(adjs[k])
         c = label_explanation(G, house, grid, wheel)
         classes.append(c)
     classes = np.array(classes)
