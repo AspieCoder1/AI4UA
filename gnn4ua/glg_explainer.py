@@ -1,3 +1,6 @@
+import os
+
+import numpy as np
 import torch
 from torch import nn
 from torch_geometric.explain import Explainer
@@ -12,15 +15,15 @@ from torch_geometric.explain.config import (
     ThresholdType, ThresholdConfig,
 )
 from torch_geometric.loader import DataLoader
-from torch_geometric.utils import to_undirected
+from torch_geometric.utils import to_dense_adj
+from tqdm import tqdm
 
 from gnn4ua.datasets.loader import (LatticeDataset, Targets,
                                     GeneralisationModes, )
 from gnn4ua.models import BlackBoxGNN
-from tqdm import tqdm
 
 
-def generate_motifs(model: nn.Module, train_data, test_data):
+def generate_motifs(model: nn.Module, train_data, test_data, task, root):
     """
     Uses PGExplainer to generate motif features from the datasets.
 
@@ -28,6 +31,11 @@ def generate_motifs(model: nn.Module, train_data, test_data):
     :param data:
     :return:
     """
+    path = f'{root}/{task}'
+
+    if not os.path.exists(path):
+        os.makedirs(path, exist_ok=True)
+
     config = ModelConfig(
         task_level=ModelTaskLevel.graph,
         mode=ModelMode.binary_classification,
@@ -36,7 +44,7 @@ def generate_motifs(model: nn.Module, train_data, test_data):
 
     explainer = Explainer(
         model=model,
-        algorithm=PGExplainer(epochs=10),
+        algorithm=PGExplainer(epochs=1),
         explanation_type=ExplanationType.phenomenon,
         model_config=config,
         edge_mask_type=MaskType.object,
@@ -48,8 +56,11 @@ def generate_motifs(model: nn.Module, train_data, test_data):
 
     assert isinstance(explainer.algorithm, PGExplainer)
 
-    for epoch in range(10):
-        for train_sample in tqdm(DataLoader(train_data, batch_size=1, shuffle=True)):
+    train_loader = DataLoader(train_data, batch_size=1, shuffle=True)
+    test_loader = DataLoader(test_data, batch_size=1)
+
+    for epoch in range(1):
+        for train_sample in tqdm(train_loader):
             explainer.algorithm.train(
                 epoch,
                 model,
@@ -60,10 +71,35 @@ def generate_motifs(model: nn.Module, train_data, test_data):
                 batch=train_sample.batch
             )
 
-    test_sample = next(iter(DataLoader(test_data, batch_size=1, shuffle=False)))
-    return explainer(test_sample.x, test_sample.edge_index, target=test_sample.y,
-                     batch=test_sample.batch,
-                     index=0)
+    explain_list_train = []
+    explain_list_train_classes = []
+    for train_sample in tqdm(train_loader):
+        out = explainer(train_sample.x, train_sample.edge_index, target=train_sample.y,
+                        batch=train_sample.batch,
+                        index=0)
+
+        motif = out.get_explanation_subgraph()
+
+        explain_list_train.append(to_dense_adj(motif.edge_index))
+        explain_list_train_classes.append(train_sample.y.item())
+
+    np.savez_compressed(f'{path}/x_train', *explain_list_train)
+    np.save(f'{path}/y_train', np.array(explain_list_train_classes))
+
+    explain_list_test = []
+    explain_list_test_classes = []
+    for test_sample in tqdm(test_loader):
+        out = explainer(test_sample.x, test_sample.edge_index, target=test_sample.y,
+                        batch=test_sample.batch,
+                        index=0)
+
+        motif = out.get_explanation_subgraph()
+
+        explain_list_test.append(to_dense_adj(motif.edge_index))
+        explain_list_test_classes.append(test_sample.y.item())
+
+    np.savez_compressed(f'{path}/x_test', *explain_list_test)
+    np.save(f'{path}/y_test', np.array(explain_list_test_classes))
 
 
 def main():
@@ -83,13 +119,8 @@ def main():
     gnn.load_state_dict(torch.load(
         '../experiments/results/task_Distributive/models/BlackBoxGNN_generalization_strong_seed_102_temperature_1_embsize_16.pt'))
 
-    motifs = generate_motifs(gnn, train_data, test_data)
-
-    new_edge_index, new_edge_mask = to_undirected(edge_index=motifs.edge_index,
-                                                  edge_attr=motifs.edge_mask,
-                                                  reduce='mean')
-    motifs.update({'edge_index': new_edge_index, 'edge_mask': new_edge_mask})
-    motifs.visualize_graph()
+    generate_motifs(gnn, train_data, test_data, root='local_features/PGExplainer',
+                    task=Targets.Distributive)
 
 
 if __name__ == "__main__":
