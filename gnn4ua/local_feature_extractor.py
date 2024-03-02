@@ -106,6 +106,28 @@ def generate_motifs(model: nn.Module, train_data, test_data,
     np.save(f'{path}/y_test', np.array(explain_list_test_classes))
 
 
+def generate_local_motif(task: Targets, generalisation_mode: GeneralisationModes):
+    n_layers = 8
+    emb_size = 16
+
+    train_data = LatticeDataset(root="data", target=task,
+                                generalisation_mode=generalisation_mode,
+                                split='train')
+    test_data = LatticeDataset(root="data", target=task,
+                               generalisation_mode=generalisation_mode,
+                               split='test')
+
+    gnn = BlackBoxGNN(train_data.num_features, emb_size, train_data.num_classes,
+                      n_layers)
+
+    gnn.load_state_dict(torch.load(
+        f'experiments/results/task_{task}/models/BlackBoxGNN_generalization_{generalisation_mode}_seed_102_temperature_1_embsize_16.pt'))
+
+    generate_motifs(gnn, train_data, test_data,
+                    task=task,
+                    generalisation_mode=generalisation_mode)
+
+
 @click.command('generate-local-motifs')
 @click.option('--task',
               type=click.Choice(['Distributive', 'Modular', 'Meet_SemiDistributive',
@@ -115,28 +137,11 @@ def generate_motifs(model: nn.Module, train_data, test_data,
 @click.option('--generalisation_mode', type=click.Choice(['weak', 'strong']),
               default='strong')
 def main(task: str, generalisation_mode: str) -> None:
-    n_layers = 8
-    emb_size = 16
-
     task = Targets[task]
     generalisation_mode = GeneralisationModes[generalisation_mode]
 
-    train_data = LatticeDataset(root="../experiments/data", target=Targets.Distributive,
-                                generalisation_mode=GeneralisationModes.weak,
-                                split='train')
-    test_data = LatticeDataset(root="../experiments/data", target=Targets.Distributive,
-                               generalisation_mode=GeneralisationModes.weak,
-                               split='test')
+    generate_local_motif(task, generalisation_mode)
 
-    gnn = BlackBoxGNN(train_data.num_features, emb_size, train_data.num_classes,
-                      n_layers)
-
-    gnn.load_state_dict(torch.load(
-        f'../experiments/results/task_{task}/models/BlackBoxGNN_generalization_{generalisation_mode}_seed_102_temperature_1_embsize_16.pt'))
-
-    generate_motifs(gnn, train_data, test_data,
-                    task=task,
-                    generalisation_mode=generalisation_mode)
 
 
 if __name__ == "__main__":

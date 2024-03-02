@@ -5,3 +5,4 @@ gnn4ua/datasets/*.joblib
 .python-version
 .idea/
 *.joblib
+data/
