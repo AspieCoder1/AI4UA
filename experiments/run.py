@@ -15,7 +15,7 @@ from tqdm import trange
 from gnn4ua.datasets.loader import LatticeDataset, Targets, GeneralisationModes
 
 sys.path.append('..')
-from gnn4ua.models import BlackBoxGNN, GCoRe, HierarchicalGCN, GraphNet
+from gnn4ua.models import BlackBoxGNN, GraphNet
 
 # torch.autograd.set_detect_anomaly(True)
 seed_everything(42)
@@ -103,13 +103,17 @@ def main():
                         optimizer = torch.optim.AdamW(gnn.parameters(),
                                                       lr=learning_rate)
 
-                        loss_form = torch.nn.BCEWithLogitsLoss()
-
 
                         gnn.train()
-                        for epoch in trange(train_epochs):
+                        for _epoch in trange(train_epochs):
                             for data in DataLoader(train_data, batch_size=1024,
                                                         shuffle=True):
+                                if target is Targets.multilabel:
+                                    loss_form = torch.nn.BCEWithLogitsLoss()
+                                else:
+                                    loss_form = torch.nn.CrossEntropyLoss(
+                                        weight=1 - data.y.float().mean(dim=0))
+
                                 optimizer.zero_grad()
                                 x, edge_index, batch = data.x, data.edge_index, data.batch
                                 y_pred, node_concepts, graph_concepts = gnn.forward(x,

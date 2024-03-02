@@ -80,7 +80,7 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes):
                         le_model,
                         device,
                         hyper_params=hyper_params,
-                        classes_names=['None distributive', 'Distributive'],
+                        classes_names=['NonDistributive', 'Distributive'],
                         dataset_name=DATASET_NAME,
                         num_classes=2
                         ).to(device)
