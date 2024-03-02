@@ -1,5 +1,6 @@
 import os
 
+import click
 import numpy as np
 import torch
 from torch import nn
@@ -23,7 +24,10 @@ from gnn4ua.datasets.loader import (LatticeDataset, Targets,
 from gnn4ua.models import BlackBoxGNN
 
 
-def generate_motifs(model: nn.Module, train_data, test_data, task, root):
+def generate_motifs(model: nn.Module, train_data, test_data,
+                    root: str = 'local_features/PGExplainer',
+                    task: Targets = Targets.Distributive,
+                    generalisation_mode: GeneralisationModes = GeneralisationModes.strong):
     """
     Uses PGExplainer to generate motif features from the datasets.
 
@@ -31,7 +35,7 @@ def generate_motifs(model: nn.Module, train_data, test_data, task, root):
     :param data:
     :return:
     """
-    path = f'{root}/{task}'
+    path = f'{root}/{task}_{generalisation_mode}'
 
     if not os.path.exists(path):
         os.makedirs(path, exist_ok=True)
@@ -102,9 +106,20 @@ def generate_motifs(model: nn.Module, train_data, test_data, task, root):
     np.save(f'{path}/y_test', np.array(explain_list_test_classes))
 
 
-def main():
+@click.command('generate-local-motifs')
+@click.option('--task',
+              type=click.Choice(['Distributive', 'Modular', 'Meet_SemiDistributive',
+                                 'Join_SemiDistributive', 'multilabel']),
+              default='Distributive'
+              )
+@click.option('--generalisation_mode', type=click.Choice(['weak', 'strong']),
+              default='strong')
+def main(task: str, generalisation_mode: str) -> None:
     n_layers = 8
     emb_size = 16
+
+    task = Targets[task]
+    generalisation_mode = GeneralisationModes[generalisation_mode]
 
     train_data = LatticeDataset(root="../experiments/data", target=Targets.Distributive,
                                 generalisation_mode=GeneralisationModes.weak,
@@ -117,10 +132,11 @@ def main():
                       n_layers)
 
     gnn.load_state_dict(torch.load(
-        '../experiments/results/task_Distributive/models/BlackBoxGNN_generalization_strong_seed_102_temperature_1_embsize_16.pt'))
+        f'../experiments/results/task_{task}/models/BlackBoxGNN_generalization_{generalisation_mode}_seed_102_temperature_1_embsize_16.pt'))
 
-    generate_motifs(gnn, train_data, test_data, root='local_features/PGExplainer',
-                    task=Targets.Distributive)
+    generate_motifs(gnn, train_data, test_data,
+                    task=task,
+                    generalisation_mode=generalisation_mode)
 
 
 if __name__ == "__main__":
