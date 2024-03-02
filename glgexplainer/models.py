@@ -14,7 +14,7 @@ import matplotlib.patches as mpatches
 import numpy as np
 import wandb
 import time
-import utils
+from . import utils
 
 
 class GLGExplainer(torch.nn.Module):

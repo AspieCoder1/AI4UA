@@ -52,7 +52,7 @@ class LocalExplanationsDataset(InMemoryDataset):
             elif feature_type == "embeddings":
                 features = torch.tensor(precomputed_embeddings[i])
 
-            t = from_networkx(nx.from_numpy_matrix(adj))
+            t = from_networkx(nx.DiGraph(adj))
             data = Data(x=features,
                         edge_index=t.edge_index,
                         edge_attr=torch.tensor(t.weight).reshape(-1, 1),
