@@ -8,7 +8,7 @@ import torch
 from torch_geometric import seed_everything
 from torch_geometric.loader import DataLoader
 from torchmetrics import MetricCollection
-from torchmetrics.classification import (BinaryAccuracy, BinaryAUROC, MultilabelAUROC,
+from torchmetrics.classification import (MultilabelAUROC,
                                          MultilabelAccuracy, )
 from tqdm import trange
 
@@ -63,9 +63,8 @@ def main():
 
                 train_metrics = MetricCollection({
                     "accuracy": MultilabelAccuracy(
-                        num_labels=train_data.num_classes) if target is Targets.multilabel else BinaryAccuracy(),
-                    "auroc": MultilabelAUROC(
-                        num_labels=train_data.num_classes) if target is Targets.multilabel else BinaryAUROC()
+                        num_labels=train_data.num_classes),
+                    "auroc": MultilabelAUROC(num_labels=train_data.num_classes)
                 }, prefix="train/")
                 test_metrics = train_metrics.clone(prefix="test/")
 
@@ -106,7 +105,7 @@ def main():
 
                         gnn.train()
                         for _epoch in trange(train_epochs):
-                            for data in DataLoader(train_data, batch_size=1024,
+                            for data in DataLoader(train_data, batch_size=2048,
                                                         shuffle=True):
                                 if target is Targets.multilabel:
                                     loss_form = torch.nn.BCEWithLogitsLoss()
@@ -136,7 +135,7 @@ def main():
                                 optimizer.step()
 
                             # Test set performance
-                            for data in DataLoader(test_data, batch_size=1024,
+                            for data in DataLoader(test_data, batch_size=2048,
                                                    shuffle=False):
                                 y_pred, _, _ = gnn.forward(data.x, data.edge_index,
                                                            data.batch)
@@ -150,7 +149,7 @@ def main():
                     train_metrics.reset()
                     test_metrics.reset()
 
-                    for data in DataLoader(train_data, batch_size=1024,
+                    for data in DataLoader(train_data, batch_size=2048,
                                            shuffle=True):
                         x, edge_index, batch = data.x, data.edge_index, data.batch
                         y_pred, _, _ = gnn.forward(x,
