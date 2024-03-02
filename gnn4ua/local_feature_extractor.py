@@ -48,7 +48,7 @@ def generate_motifs(model: nn.Module, train_data, test_data,
 
     explainer = Explainer(
         model=model,
-        algorithm=PGExplainer(epochs=1),
+        algorithm=PGExplainer(epochs=10),
         explanation_type=ExplanationType.phenomenon,
         model_config=config,
         edge_mask_type=MaskType.object,
@@ -63,7 +63,7 @@ def generate_motifs(model: nn.Module, train_data, test_data,
     train_loader = DataLoader(train_data, batch_size=1, shuffle=True)
     test_loader = DataLoader(test_data, batch_size=1)
 
-    for epoch in range(1):
+    for epoch in range(10):
         for train_sample in tqdm(train_loader):
             explainer.algorithm.train(
                 epoch,
