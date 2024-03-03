@@ -11,7 +11,7 @@ def cli():
     ...
 
 
-@click.command(
+@cli.command(
     help="Train BlackBoxGNN and save the results"
 )
 def train_gnns():
