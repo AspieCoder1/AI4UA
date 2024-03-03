@@ -60,30 +60,27 @@ def generate_motifs(model: nn.Module, train_data, test_data,
 
     for epoch in range(10):
         for train_sample in tqdm(train_loader):
-            for index in range(train_data.num_classes):
-                explainer.algorithm.train(
-                    epoch,
-                    model,
-                    train_sample.x,
-                    train_sample.edge_index,
-                    target=train_sample.y,
-                    index=index,
-                    batch=train_sample.batch
-                )
+            explainer.algorithm.train(
+                epoch,
+                model,
+                train_sample.x,
+                train_sample.edge_index,
+                target=train_sample.y.float(),
+                index=None,
+                batch=train_sample.batch
+            )
 
     explain_list_train = []
     explain_list_train_classes = []
+
     for train_sample in tqdm(train_loader):
-        for index in range(train_data.num_classes):
-            out = explainer(train_sample.x, train_sample.edge_index,
-                            target=train_sample.y,
-                            batch=train_sample.batch,
-                            index=index)
+        out = explainer(train_sample.x, train_sample.edge_index,
+                        target=train_sample.y.float(),
+                        batch=train_sample.batch,
+                        index=None)
 
-            motif = out.get_explanation_subgraph()
-
-            explain_list_train.append(to_dense_adj(motif.edge_index))
-            explain_list_train_classes.append(torch.argmax(train_sample.y).item())
+        explain_list_train.append(to_dense_adj(out.edge_index, edge_attr=out.edge_attr))
+        explain_list_train_classes.append(torch.argmax(train_sample.y).item())
 
     np.savez_compressed(f'{path}/x_train', *explain_list_train)
     np.save(f'{path}/y_train', np.array(explain_list_train_classes))
@@ -91,13 +88,13 @@ def generate_motifs(model: nn.Module, train_data, test_data,
     explain_list_test = []
     explain_list_test_classes = []
     for test_sample in tqdm(test_loader):
-        for index in range(test_data.num_classes):
-            out = explainer(test_sample.x, test_sample.edge_index, target=test_sample.y,
-                            batch=test_sample.batch,
-                            index=0)
-
-            explain_list_test.append(to_dense_adj(out.edge_index, out.edge_mask))
-            explain_list_test_classes.append(torch.argmax(test_sample.y).item())
+        out = explainer(test_sample.x, test_sample.edge_index,
+                        target=test_sample.y.float(),
+                        batch=test_sample.batch,
+                        index=None)
+        print(out.edge_mask)
+        explain_list_test.append(to_dense_adj(out.edge_index, edge_attr=out.edge_mask))
+        explain_list_test_classes.append(torch.argmax(test_sample.y).item())
 
     np.savez_compressed(f'{path}/x_test', *explain_list_test)
     np.save(f'{path}/y_test', np.array(explain_list_test_classes))

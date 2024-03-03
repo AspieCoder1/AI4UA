@@ -8,7 +8,7 @@ import numpy as np
 from networkx.algorithms import isomorphism
 from networkx.generators import classic
 
-import utils
+from .utils import normalize_belonging
 from gnn4ua.datasets.loader import GeneralisationModes, Targets
 
 base = "../local_explanations/"
@@ -126,6 +126,7 @@ def read_lattice(explainer="PGExplainer", target: Targets = Targets.Distributive
     with np.load(f'{base_path}/x_{split}.npz', allow_pickle=True) as data:
         num_multi_shapes_removed, num_class_relationship_broken, cont_num_iter, num_iter = 0, 0, 0, 0
         for idx, adj in enumerate(data.values()):
+            adj = adj.squeeze()
             G_orig = nx.Graph(adj)
             cut = elbow_method(np.triu(adj).flatten(), index_stopped,
                                min_num_include)
@@ -135,7 +136,7 @@ def read_lattice(explainer="PGExplainer", target: Targets = Targets.Distributive
             masked[masked > cut] = 1
             G = nx.Graph(masked)
             added = 0
-            graph_labels = label_explanation(G_orig, pattern_N5, pattern_M3,
+            graph_labels = label_explanation_lattice(G_orig, pattern_N5, pattern_M3,
                                              return_raw=True)
             summary_predictions["correct"].append(assign_class(graph_labels))
             total_cc_labels.append([])
@@ -165,7 +166,7 @@ def read_lattice(explainer="PGExplainer", target: Targets = Targets.Distributive
                     if lbl not in cc_labels:
                         num_class_relationship_broken += 1
                         break
-    belonging = utils.normalize_belonging(belonging)
+    belonging = normalize_belonging(belonging)
     if evaluate_method:
         evaluate_cutting(ori_adjs, adjs)
         print("num_class_relationship_broken: ", num_class_relationship_broken,
@@ -331,7 +332,7 @@ def read_bamultishapes(explainer="PGExplainer", dataset="BAMultiShapes", model="
                             num_class_relationship_broken += 1
                             break
                 cont_num_iter += 1
-    belonging = utils.normalize_belonging(belonging)
+    belonging = normalize_belonging(belonging)
     if evaluate_method:
         evaluate_cutting(ori_adjs, adjs)
         print("num_class_relationship_broken: ", num_class_relationship_broken,
@@ -428,7 +429,7 @@ def read_mutagenicity(explainer="PGExplainer", model="GCN_TF", split="TRAIN",
                 else:
                     pass
                 cont_num_iter += 1
-    belonging = utils.normalize_belonging(belonging)
+    belonging = normalize_belonging(belonging)
     le_classes = [l - 1 for l in le_classes]
     return adjs, edge_weights, ori_adjs, ori_classes, belonging, summary_predictions, le_classes, precomputed_embeddings
 
@@ -549,5 +550,5 @@ def read_hin(explainer="PGExplainer", model="GCN", split="TRAIN", min_num_includ
                     ori_edge_weights.append(nx.get_edge_attributes(g, "weight"))
                     ori_classes.append(gnn_pred)
                 cont_num_iter += 1
-    belonging = utils.normalize_belonging(belonging)
+    belonging = normalize_belonging(belonging)
     return adjs, edge_weights, ori_adjs, ori_classes, belonging, summary_predictions, le_classes, precomputed_embeddings

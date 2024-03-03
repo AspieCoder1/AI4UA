@@ -32,12 +32,12 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes):
         hyper_params = json.load(json_file)
 
     adjs_train, edge_weights_train, ori_classes_train, belonging_train, summary_predictions_train, le_classes_train = read_lattice(
-        task=task,
+        target=task,
         mode=generalisation_mode,
         split='train'
     )
     adjs_test, edge_weights_test, ori_classes_test, belonging_test, summary_predictions_test, le_classes_test = read_lattice(
-        task=task,
+        target=task,
         mode=generalisation_mode,
         split='test'
     )
