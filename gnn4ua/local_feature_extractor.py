@@ -66,7 +66,7 @@ def generate_motifs(model: nn.Module, train_data, test_data,
                 train_sample.x,
                 train_sample.edge_index,
                 target=train_sample.y.float(),
-                index=None,
+                index=0,
                 batch=train_sample.batch
             )
 
@@ -77,7 +77,7 @@ def generate_motifs(model: nn.Module, train_data, test_data,
         out = explainer(train_sample.x, train_sample.edge_index,
                         target=train_sample.y.float(),
                         batch=train_sample.batch,
-                        index=None)
+                        index=0)
 
         explain_list_train.append(to_dense_adj(out.edge_index, edge_attr=out.edge_attr))
         explain_list_train_classes.append(torch.argmax(train_sample.y).item())
@@ -91,7 +91,7 @@ def generate_motifs(model: nn.Module, train_data, test_data,
         out = explainer(test_sample.x, test_sample.edge_index,
                         target=test_sample.y.float(),
                         batch=test_sample.batch,
-                        index=None)
+                        index=0)
         print(out.edge_mask)
         explain_list_test.append(to_dense_adj(out.edge_index, edge_attr=out.edge_mask))
         explain_list_test_classes.append(torch.argmax(test_sample.y).item())
