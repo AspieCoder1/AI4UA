@@ -36,11 +36,13 @@ def train_gnns():
     default='strong',
     help='Generalisation mode used to train the GNN'
 )
-def extract_motifs(task: str, generalisation_mode: str):
+@click.option("--n_epochs", type=int, default=1,
+              help="Number of training epochs for PGExplainer")
+def extract_motifs(task: str, generalisation_mode: str, n_epochs: int):
     task = Targets[task]
     generalisation_mode = GeneralisationModes[generalisation_mode]
 
-    generate_local_motif(task, generalisation_mode)
+    generate_local_motif(task, generalisation_mode, n_epochs)
 
 
 @cli.command(

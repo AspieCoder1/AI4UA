@@ -26,7 +26,8 @@ from gnn4ua.models import BlackBoxGNN
 def generate_motifs(model: nn.Module, train_data, test_data,
                     root: str = 'local_features/PGExplainer',
                     task: Targets = Targets.Distributive,
-                    generalisation_mode: GeneralisationModes = GeneralisationModes.strong):
+                    generalisation_mode: GeneralisationModes = GeneralisationModes.strong,
+                    n_epochs: int = 10):
     """
     Uses PGExplainer to generate motif features from the datasets.
 
@@ -47,7 +48,7 @@ def generate_motifs(model: nn.Module, train_data, test_data,
 
     explainer = Explainer(
         model=model,
-        algorithm=PGExplainer(epochs=10),
+        algorithm=PGExplainer(epochs=n_epochs),
         explanation_type=ExplanationType.phenomenon,
         model_config=config,
         edge_mask_type=MaskType.object,
@@ -58,7 +59,7 @@ def generate_motifs(model: nn.Module, train_data, test_data,
     train_loader = DataLoader(train_data, batch_size=1, shuffle=True)
     test_loader = DataLoader(test_data, batch_size=1)
 
-    for epoch in range(10):
+    for epoch in range(n_epochs):
         for train_sample in tqdm(train_loader):
             explainer.algorithm.train(
                 epoch,
@@ -75,11 +76,12 @@ def generate_motifs(model: nn.Module, train_data, test_data,
 
     for train_sample in tqdm(train_loader):
         out = explainer(train_sample.x, train_sample.edge_index,
-                        target=train_sample.y.float(),
+                        target=train_sample.y.long(),
                         batch=train_sample.batch,
                         index=0)
 
-        explain_list_train.append(to_dense_adj(out.edge_index, edge_attr=out.edge_attr))
+        explain_list_train.append(
+            to_dense_adj(out.edge_index, edge_attr=out.edge_weight))
         explain_list_train_classes.append(train_sample.y.item())
 
     np.savez_compressed(f'{path}/x_train', *explain_list_train)
@@ -89,18 +91,19 @@ def generate_motifs(model: nn.Module, train_data, test_data,
     explain_list_test_classes = []
     for test_sample in tqdm(test_loader):
         out = explainer(test_sample.x, test_sample.edge_index,
-                        target=test_sample.y.float(),
+                        target=test_sample.y.long(),
                         batch=test_sample.batch,
                         index=0)
-        print(out.edge_mask)
         explain_list_test.append(to_dense_adj(out.edge_index, edge_attr=out.edge_mask))
         explain_list_test_classes.append(test_sample.y.item())
 
+    print(explain_list_test[0])
     np.savez_compressed(f'{path}/x_test', *explain_list_test)
     np.save(f'{path}/y_test', np.array(explain_list_test_classes))
 
 
-def generate_local_motif(task: Targets, generalisation_mode: GeneralisationModes):
+def generate_local_motif(task: Targets, generalisation_mode: GeneralisationModes,
+                         n_epochs: int):
     n_layers = 8
     emb_size = 16
 
@@ -119,7 +122,7 @@ def generate_local_motif(task: Targets, generalisation_mode: GeneralisationModes
 
     generate_motifs(gnn, train_data, test_data,
                     task=task,
-                    generalisation_mode=generalisation_mode)
+                    generalisation_mode=generalisation_mode, n_epochs=n_epochs)
 
 
 @click.command('generate-local-motifs')
