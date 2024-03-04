@@ -28,5 +28,5 @@
   "log_images": false,
   "log_models": false,
   "log_wandb": false,
-  "num_epochs": 2000
+  "num_epochs": 100
 }
