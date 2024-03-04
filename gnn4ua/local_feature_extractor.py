@@ -115,7 +115,7 @@ def generate_local_motif(task: Targets, generalisation_mode: GeneralisationModes
                       n_layers)
 
     gnn.load_state_dict(torch.load(
-        f'experiments/results/task_{task}/models/BlackBoxGNN_generalization_{generalisation_mode}_seed_102_temperature_1_embsize_16.pt'))
+        f'results/task_{task}/models/BlackBoxGNN_generalization_{generalisation_mode}_seed_102_temperature_1_embsize_16.pt'))
 
     generate_motifs(gnn, train_data, test_data,
                     task=task,
