@@ -69,5 +69,6 @@ def train_explainer(task: str, generalisation_mode: str):
 
     run_glgexplainer(task, generalisation_mode)
 
+
 if __name__ == '__main__':
     cli()

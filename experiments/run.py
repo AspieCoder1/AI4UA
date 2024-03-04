@@ -112,9 +112,16 @@ def run_gnn_training():
                                                         shuffle=True):
                                 optimizer.zero_grad()
                                 x, edge_index, batch = data.x, data.edge_index, data.batch
-                                y_pred, node_concepts, graph_concepts = gnn.forward(x,
-                                                                                    edge_index,
-                                                                                    batch)
+
+                                out = gnn.forward(x,
+                                                  edge_index,
+                                                  batch)
+
+                                if isinstance(gnn, BlackBoxGNN):
+                                    y_pred = out
+                                else:
+                                    y_pred, node_concepts, graph_concepts = out
+
                                 train_metrics(y_pred, data.y)
 
                                 # compute loss

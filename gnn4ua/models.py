@@ -160,4 +160,4 @@ class BlackBoxGNN(GraphNet):
         cemb = global_add_pool(x, batch)
         x = self.dense_layers(cemb)
 
-        return x, None, cemb
+        return x #, None, cemb
