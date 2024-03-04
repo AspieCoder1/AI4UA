@@ -1,12 +1,13 @@
 import json
 from typing import Literal
 
+import click
 import numpy as np
 import torch
 import torch_geometric.transforms as T
 
 import glgexplainer.utils as utils
-from glgexplainer.local_explainations import read_lattice
+from glgexplainer.local_explainations import read_lattice, lattice_classnames
 from glgexplainer.models import LEN, GLGExplainer, LEEmbedder
 from gnn4ua.datasets.loader import Targets, GeneralisationModes
 
@@ -28,9 +29,11 @@ def read_lattice_dataset(task: Targets, mode: GeneralisationModes,
 def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes):
     DATASET_NAME = task
 
+    click.secho("Loading hyperparameters...", fg="blue", bold=True)
     with open(f"config/{DATASET_NAME}_params.json") as json_file:
         hyper_params = json.load(json_file)
 
+    click.secho("Processing datasets...", fg="blue", bold=True)
     adjs_train, edge_weights_train, ori_classes_train, belonging_train, summary_predictions_train, le_classes_train = read_lattice(
         target=task,
         mode=generalisation_mode,
@@ -47,12 +50,13 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes):
         T.NormalizeFeatures(),
     ])
 
-    dataset_train = utils.LocalExplanationsDataset("", adjs_train, "same",
+    click.secho("Setup datasets...", fg="blue", bold=True)
+    dataset_train = utils.LocalExplanationsDataset("data_glg", adjs_train, "same",
                                                    transform=transform,
                                                    y=le_classes_train,
                                                    belonging=belonging_train,
                                                    task_y=ori_classes_train)
-    dataset_test = utils.LocalExplanationsDataset("", adjs_test, "same",
+    dataset_test = utils.LocalExplanationsDataset("data_glg", adjs_test, "same",
                                                   transform=transform,
                                                   y=le_classes_test,
                                                   belonging=belonging_test,
@@ -76,11 +80,12 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes):
                         le_model,
                         device=device,
                         hyper_params=hyper_params,
-                        classes_names=['NotDistributive', 'Distributive'],
+                        classes_names=lattice_classnames,
                         dataset_name=DATASET_NAME,
                         num_classes=len(
                             train_group_loader.dataset.data.task_y.unique())
                         ).to(device)
 
+    click.secho("Train GLGExplainer...", fg="blue", bold=True)
     expl.iterate(train_group_loader, test_group_loader, plot=False)
     expl.inspect(test_group_loader)

@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from torch import nn
 from torch_geometric.explain import Explainer
-from torch_geometric.explain.algorithm import PGExplainer
+from torch_geometric.explain.algorithm import GNNExplainer
 from torch_geometric.explain.config import (
     ExplanationType,
     ModelConfig,
@@ -15,7 +15,7 @@ from torch_geometric.explain.config import (
     MaskType,
 )
 from torch_geometric.loader import DataLoader
-from torch_geometric.utils import to_dense_adj
+from torch_geometric.utils import to_dense_adj, to_undirected
 from tqdm import tqdm
 
 from gnn4ua.datasets.loader import (LatticeDataset, Targets,
@@ -24,10 +24,10 @@ from gnn4ua.models import BlackBoxGNN
 
 
 def generate_motifs(model: nn.Module, train_data, test_data,
-                    root: str = 'local_features/PGExplainer',
+                    root: str = 'local_features/GNNExplainer',
                     task: Targets = Targets.Distributive,
                     generalisation_mode: GeneralisationModes = GeneralisationModes.strong,
-                    n_epochs: int = 10):
+                    n_epochs: int = 100):
     """
     Uses PGExplainer to generate motif features from the datasets.
 
@@ -48,29 +48,17 @@ def generate_motifs(model: nn.Module, train_data, test_data,
 
     explainer = Explainer(
         model=model,
-        algorithm=PGExplainer(epochs=n_epochs),
+        algorithm=GNNExplainer(epochs=n_epochs),
         explanation_type=ExplanationType.phenomenon,
         model_config=config,
         edge_mask_type=MaskType.object,
         threshold_config=None
     )
 
-    assert isinstance(explainer.algorithm, PGExplainer)
+    assert isinstance(explainer.algorithm, GNNExplainer)
 
     train_loader = DataLoader(train_data, batch_size=1, shuffle=False)
     test_loader = DataLoader(test_data, batch_size=1, shuffle=False)
-
-    for epoch in range(n_epochs):
-        for train_sample in tqdm(train_loader):
-            explainer.algorithm.train(
-                epoch,
-                model,
-                train_sample.x,
-                train_sample.edge_index,
-                target=train_sample.y,
-                index=0,
-                batch=train_sample.batch
-            )
 
     explain_list_train: [torch.Tensor] = []
     explain_list_train_classes = []
@@ -78,16 +66,13 @@ def generate_motifs(model: nn.Module, train_data, test_data,
     for train_sample in tqdm(train_loader):
         out = explainer(train_sample.x, train_sample.edge_index,
                         target=train_sample.y,
-                        batch=train_sample.batch,
-                        index=0)
-
-        print(out.edge_weight)
-        print(out.edge_mask)
-        out.visualize_graph()
-        break
+                        batch=train_sample.batch)
+        new_edge_index, new_edge_mask = to_undirected(edge_index=out.edge_index,
+                                                      edge_attr=out.edge_mask,
+                                                      reduce='max')
 
         explain_list_train.append(
-            to_dense_adj(out.edge_index, edge_attr=out.edge_mask))
+            to_dense_adj(new_edge_index, edge_attr=new_edge_mask))
         explain_list_train_classes.append(train_sample.y.item())
 
     np.savez_compressed(f'{path}/x_train', *explain_list_train)
@@ -95,13 +80,17 @@ def generate_motifs(model: nn.Module, train_data, test_data,
 
     explain_list_test: list[torch.Tensor] = []
     explain_list_test_classes = []
+
     for test_sample in tqdm(test_loader):
         out = explainer(test_sample.x, test_sample.edge_index,
                         target=test_sample.y,
-                        batch=test_sample.batch,
-                        index=0)
+                        batch=test_sample.batch)
 
-        explain_list_test.append(to_dense_adj(out.edge_index, edge_attr=out.edge_mask))
+        new_edge_index, new_edge_mask = to_undirected(edge_index=out.edge_index,
+                                                      edge_attr=out.edge_mask,
+                                                      reduce='max')
+
+        explain_list_test.append(to_dense_adj(new_edge_index, edge_attr=new_edge_mask))
         explain_list_test_classes.append(test_sample.y.item())
 
     np.savez_compressed(f'{path}/x_test', *explain_list_test)
