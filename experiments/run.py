@@ -9,7 +9,8 @@ from torch_geometric import seed_everything
 from torch_geometric.loader import DataLoader
 from torchmetrics import MetricCollection
 from torchmetrics.classification import (MultilabelAUROC,
-                                         MultilabelAccuracy, )
+                                         MultilabelAccuracy, BinaryAccuracy,
+                                         BinaryAUROC, )
 from tqdm import trange
 
 from gnn4ua.datasets.loader import LatticeDataset, Targets, GeneralisationModes
@@ -63,10 +64,12 @@ def run_gnn_training():
 
                 train_metrics = MetricCollection({
                     "accuracy": MultilabelAccuracy(
-                        num_labels=train_data.num_classes),
-                    "auroc": MultilabelAUROC(num_labels=train_data.num_classes)
+                        num_labels=train_data.num_classes) if target is Targets.multilabel else BinaryAccuracy(),
+                    "auroc": MultilabelAUROC(
+                        num_labels=train_data.num_classes) if target is Targets.multilabel else BinaryAUROC()
                 }, prefix="train/")
                 test_metrics = train_metrics.clone(prefix="test/")
+                loss_form = torch.nn.BCEWithLogitsLoss()
 
                 # load data and set up cross-validation
                 # data = load_data(dataset, label_name=label_name,
@@ -107,12 +110,6 @@ def run_gnn_training():
                         for _epoch in trange(train_epochs):
                             for data in DataLoader(train_data, batch_size=2048,
                                                         shuffle=True):
-                                if target is Targets.multilabel:
-                                    loss_form = torch.nn.BCEWithLogitsLoss()
-                                else:
-                                    loss_form = torch.nn.CrossEntropyLoss(
-                                        weight=1 - data.y.float().mean(dim=0))
-
                                 optimizer.zero_grad()
                                 x, edge_index, batch = data.x, data.edge_index, data.batch
                                 y_pred, node_concepts, graph_concepts = gnn.forward(x,

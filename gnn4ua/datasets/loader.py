@@ -112,7 +112,7 @@ class LatticeDataset(InMemoryDataset):
     def num_classes(self) -> int:
         if self.target is Targets.multilabel:
             return 5
-        return 2
+        return 1
 
 
 # Convert to InMemoryDataset to do loading sensibly and also handles the minibatching for us

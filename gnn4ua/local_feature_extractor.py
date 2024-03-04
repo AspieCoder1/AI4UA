@@ -41,7 +41,7 @@ def generate_motifs(model: nn.Module, train_data, test_data,
 
     config = ModelConfig(
         task_level=ModelTaskLevel.graph,
-        mode=ModelMode.multiclass_classification,
+        mode=ModelMode.binary_classification,
         return_type=ModelReturnType.raw,
     )
 
