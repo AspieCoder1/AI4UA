@@ -52,12 +52,13 @@ def generate_motifs(model: nn.Module, train_data, test_data,
         explanation_type=ExplanationType.phenomenon,
         model_config=config,
         edge_mask_type=MaskType.object,
+        threshold_config=None
     )
 
     assert isinstance(explainer.algorithm, PGExplainer)
 
-    train_loader = DataLoader(train_data, batch_size=1, shuffle=True)
-    test_loader = DataLoader(test_data, batch_size=1)
+    train_loader = DataLoader(train_data, batch_size=1, shuffle=False)
+    test_loader = DataLoader(test_data, batch_size=1, shuffle=False)
 
     for epoch in range(n_epochs):
         for train_sample in tqdm(train_loader):
@@ -66,38 +67,43 @@ def generate_motifs(model: nn.Module, train_data, test_data,
                 model,
                 train_sample.x,
                 train_sample.edge_index,
-                target=train_sample.y.float(),
+                target=train_sample.y,
                 index=0,
                 batch=train_sample.batch
             )
 
-    explain_list_train = []
+    explain_list_train: [torch.Tensor] = []
     explain_list_train_classes = []
 
     for train_sample in tqdm(train_loader):
         out = explainer(train_sample.x, train_sample.edge_index,
-                        target=train_sample.y.long(),
+                        target=train_sample.y,
                         batch=train_sample.batch,
                         index=0)
 
+        print(out.edge_weight)
+        print(out.edge_mask)
+        out.visualize_graph()
+        break
+
         explain_list_train.append(
-            to_dense_adj(out.edge_index, edge_attr=out.edge_weight))
+            to_dense_adj(out.edge_index, edge_attr=out.edge_mask))
         explain_list_train_classes.append(train_sample.y.item())
 
     np.savez_compressed(f'{path}/x_train', *explain_list_train)
     np.save(f'{path}/y_train', np.array(explain_list_train_classes))
 
-    explain_list_test = []
+    explain_list_test: list[torch.Tensor] = []
     explain_list_test_classes = []
     for test_sample in tqdm(test_loader):
         out = explainer(test_sample.x, test_sample.edge_index,
-                        target=test_sample.y.long(),
+                        target=test_sample.y,
                         batch=test_sample.batch,
                         index=0)
+
         explain_list_test.append(to_dense_adj(out.edge_index, edge_attr=out.edge_mask))
         explain_list_test_classes.append(test_sample.y.item())
 
-    print(explain_list_test[0])
     np.savez_compressed(f'{path}/x_test', *explain_list_test)
     np.save(f'{path}/y_test', np.array(explain_list_test_classes))
 
