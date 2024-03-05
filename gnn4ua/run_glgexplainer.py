@@ -2,9 +2,12 @@ import json
 from typing import Literal
 
 import click
+import networkx as nx
 import numpy as np
 import torch
 import torch_geometric.transforms as T
+from matplotlib import pyplot as plt
+from torch_geometric.utils import to_networkx
 
 import glgexplainer.utils as utils
 from glgexplainer.local_explainations import read_lattice, lattice_classnames
@@ -89,3 +92,46 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes):
     click.secho("Train GLGExplainer...", fg="blue", bold=True)
     expl.iterate(train_group_loader, test_group_loader, plot=False)
     expl.inspect(test_group_loader)
+
+    # change assign function to a non-discrete one just to compute distance between local expls. and prototypes
+    # useful to show the materialization of prototypes based on distance
+    click.secho("Plotting prototypes...", fg='blue', bold=True)
+    expl.hyper["assign_func"] = "sim"
+
+    x_train, emb, concepts_assignement, y_train_1h, le_classes, le_idxs, belonging = expl.get_concept_vector(
+        test_group_loader,
+        return_raw=True)
+    expl.hyper["assign_func"] = "discrete"
+
+    proto_names = {
+        0: "BA",
+        1: "Wheel",
+        2: "Mix",
+        3: "Grid",
+        4: "House",
+        5: "Grid",
+    }
+    torch.manual_seed(42)
+    fig = plt.figure(figsize=(15, 5 * 1.8))
+    n = 0
+    for p in range(expl.hyper["num_prototypes"]):
+        idxs = le_idxs[concepts_assignement.argmax(-1) == p]
+        # idxs = idxs[torch.randperm(len(idxs))]    # random
+        sa = concepts_assignement[concepts_assignement.argmax(-1) == p]
+        idxs = idxs[torch.argsort(sa[:, p], descending=True)]
+        for ex in range(min(5, len(idxs))):
+            n += 1
+            ax = plt.subplot(expl.hyper["num_prototypes"], 5, n)
+            G = to_networkx(dataset_test[int(idxs[ex])], to_undirected=True,
+                            remove_self_loops=True)
+            pos = nx.spring_layout(G, seed=42)
+            nx.draw(G, pos, node_size=20, ax=ax, node_color="orange")
+            ax.axis("on")
+            plt.box(False)
+
+    for p in range(expl.hyper["num_prototypes"]):
+        plt.subplot(expl.hyper["num_prototypes"], 5, 5 * p + 1)
+        plt.ylabel(f"$P_{p}$\n", size=25, rotation="horizontal",
+                   labelpad=50)
+
+    plt.show()

@@ -107,14 +107,14 @@ def read_lattice(explainer="GNNExplainer", target: Targets = Targets.Distributiv
         num_multi_shapes_removed, num_class_relationship_broken, cont_num_iter, num_iter = 0, 0, 0, 0
         for idx, adj in enumerate(data.values()):
             adj = adj.squeeze()
-            G_orig = nx.Graph(adj)
+            G_orig = nx.Graph(adj, undirected=True, remove_self_loops=True)
             cut = elbow_method(np.triu(adj).flatten(), index_stopped,
                                min_num_include)
 
             masked = copy.deepcopy(adj)
             masked[masked <= cut] = 0
             masked[masked > cut] = 1
-            G = nx.Graph(masked)
+            G = nx.Graph(masked, undirected=True, remove_self_loops=True)
             added = 0
             graph_labels = label_explanation_lattice(G_orig, return_raw=True)
             summary_predictions["correct"].append(assign_class_lattice(graph_labels))
