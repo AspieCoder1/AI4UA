@@ -10,8 +10,7 @@ from .utils import normalize_belonging
 
 base = "../local_explanations/"
 
-lattice_classnames = ['N5', 'M3', 'DIAMOND', 'N5+M3', 'N5+DIAMOND', 'M3+DIAMOND', 'ALL',
-                      'OTHER']
+lattice_classnames = ['N5', 'M3', 'N5+M3', 'OTHER']
 
 # Patterns for Lattice extraction
 pattern_M3 = nx.Graph()
@@ -21,7 +20,12 @@ pattern_M3.add_edges_from([
     (0, 3),
     (1, 4),
     (2, 4),
-    (3, 4)
+    (3, 4),
+    (0, 0),
+    (1, 1),
+    (2, 2),
+    (3, 3),
+    (4, 4)
 ])
 pattern_N5 = nx.Graph()
 pattern_N5.add_edges_from([
@@ -29,15 +33,14 @@ pattern_N5.add_edges_from([
     (0, 2),
     (1, 3),
     (2, 4),
-    (3, 4)
+    (3, 4),
+    (0, 0),
+    (1, 1),
+    (2, 2),
+    (3, 3),
+    (4, 4)
 ])
-pattern_diamond = nx.Graph()
-pattern_diamond.add_edges_from([
-    (0, 1),
-    (0, 2),
-    (1, 3),
-    (1, 4)
-])
+
 
 
 def elbow_method(weights, index_stopped=None, min_num_include=7, backup=None):
@@ -62,23 +65,17 @@ def elbow_method(weights, index_stopped=None, min_num_include=7, backup=None):
 
 def assign_class_lattice(pattern_matched):
     if len(pattern_matched) == 0:
-        return 7
+        return 4
 
     if len(pattern_matched) == 1:
         return pattern_matched[0]
 
-    if 0 in pattern_matched and 1 in pattern_matched:
-        return 3
-    if 0 in pattern_matched and 2 in pattern_matched:
-        return 4
-    if 1 in pattern_matched and 2 in pattern_matched:
-        return 5
-    return 6
+    return 3
 
 
 def label_explanation_lattice(G_orig, return_raw=False):
     pattern_matched = []
-    for i, pattern in enumerate([pattern_N5, pattern_M3, pattern_diamond]):
+    for i, pattern in enumerate([pattern_N5, pattern_M3]):
         GM = isomorphism.GraphMatcher(G_orig, pattern)
         if GM.subgraph_is_isomorphic():
             pattern_matched.append(i)
@@ -158,7 +155,7 @@ def evaluate_cutting(ori_adjs, adjs):
         G = nx.Graph(adj)
 
         # count original patterns
-        for pattern in [pattern_N5, pattern_M3, pattern_diamond]:
+        for pattern in [pattern_N5, pattern_M3]:
             GM = isomorphism.GraphMatcher(G, pattern)
             match = list(GM.subgraph_isomorphisms_iter())
             if len(match) > 0:
@@ -172,7 +169,7 @@ def evaluate_cutting(ori_adjs, adjs):
             if len(cc) > 2:
                 G1 = G.subgraph(cc)
                 pattern_found = False
-                for pattern in [pattern_N5, pattern_M3, pattern_diamond]:
+                for pattern in [pattern_N5, pattern_M3]:
                     GM = isomorphism.GraphMatcher(G1, pattern)
                     match = list(GM.subgraph_isomorphisms_iter())
                     if len(match) > 0:

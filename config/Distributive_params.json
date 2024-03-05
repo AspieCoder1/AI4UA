@@ -16,7 +16,7 @@
   "te": 1,
   "focal_loss": true,
   "debug_prototypes": false,
-  "num_prototypes": 2,
+  "num_prototypes": 4,
   "dim_prototypes": 10,
   "num_le_features": 5,
   "embedder_backbone": "GIN",

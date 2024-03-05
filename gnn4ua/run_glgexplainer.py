@@ -42,6 +42,7 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes):
         mode=generalisation_mode,
         split='train'
     )
+
     adjs_test, edge_weights_test, ori_classes_test, belonging_test, summary_predictions_test, le_classes_test = read_lattice(
         target=task,
         mode=generalisation_mode,
