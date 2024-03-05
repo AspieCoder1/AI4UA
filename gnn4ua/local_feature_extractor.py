@@ -35,6 +35,8 @@ def generate_motifs(model: nn.Module, train_data, test_data,
     :param data:
     :return:
     """
+
+    model.eval()
     path = f'{root}/{task}_{generalisation_mode}'
 
     if not os.path.exists(path):
@@ -76,7 +78,6 @@ def generate_motifs(model: nn.Module, train_data, test_data,
 
     for train_sample in tqdm(train_loader):
         out = explainer(
-            model=model,
             x=train_sample.x,
             edge_index=train_sample.edge_index,
             target=train_sample.y,
@@ -85,7 +86,6 @@ def generate_motifs(model: nn.Module, train_data, test_data,
         new_edge_index, new_edge_mask = to_undirected(edge_index=out.edge_index,
                                                       edge_attr=out.edge_mask,
                                                       reduce='max')
-        print(new_edge_mask)
         explain_list_train.append(
             to_dense_adj(new_edge_index, edge_attr=new_edge_mask))
         explain_list_train_classes.append(train_sample.y.item())
@@ -98,7 +98,6 @@ def generate_motifs(model: nn.Module, train_data, test_data,
 
     for test_sample in tqdm(test_loader):
         out = explainer(
-            model=model,
             x=test_sample.x,
             edge_index=test_sample.edge_index,
             target=test_sample.y,

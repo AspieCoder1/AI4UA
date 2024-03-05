@@ -84,7 +84,7 @@ def label_explanation_lattice(G_orig, return_raw=False):
         return assign_class_lattice(pattern_matched)
 
 
-def read_lattice(explainer="GNNExplainer", target: Targets = Targets.Distributive,
+def read_lattice(explainer="PGExplainer", target: Targets = Targets.Distributive,
                  mode: GeneralisationModes = GeneralisationModes.strong,
                  split: Literal['train', 'test'] = 'train', min_num_include: int = 7,
                  evaluate_method=False):
