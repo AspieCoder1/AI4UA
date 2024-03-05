@@ -50,7 +50,8 @@ def generate_motifs(model: nn.Module, train_data, test_data,
 
     explainer = Explainer(
         model=model,
-        algorithm=PGExplainer(epochs=n_epochs),
+        algorithm=PGExplainer(epochs=n_epochs, edge_size=0.005, edge_ent=1.0,
+                              temp=[1.0, 0.5], bias=1.0),
         explanation_type=ExplanationType.phenomenon,
         model_config=config,
         edge_mask_type=MaskType.object,

@@ -101,7 +101,8 @@ def read_lattice(explainer="PGExplainer", target: Targets = Targets.Distributive
             masked = copy.deepcopy(adj)
             masked[masked <= cut] = 0
             masked[masked > cut] = 1
-            G = nx.Graph(masked, undirected=True, remove_self_loops=True)
+            G = nx.Graph(masked, undirected=True)
+            G.remove_edges_from(nx.selfloop_edges(G))
             added = 0
             graph_labels = label_explanation_lattice(G_orig, return_raw=True)
             summary_predictions["correct"].append(assign_class_lattice(graph_labels))
@@ -109,7 +110,7 @@ def read_lattice(explainer="PGExplainer", target: Targets = Targets.Distributive
             cc_labels = []
             for cc in nx.connected_components(G):
                 G1 = G.subgraph(cc)
-                if not nx.diameter(G1) == len(G1.edges()):  # if is not a line
+                if nx.diameter(G1) != len(G1.edges()) or len(G1.nodes()) > 2:  # if is not a line
                     cc_lbl = label_explanation_lattice(G1, return_raw=True)
                     added += 1
                     cc_labels.extend(cc_lbl)
