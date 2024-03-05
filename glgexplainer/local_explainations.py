@@ -65,12 +65,12 @@ def elbow_method(weights, index_stopped=None, min_num_include=7, backup=None):
 
 def assign_class_lattice(pattern_matched):
     if len(pattern_matched) == 0:
-        return 4
+        return 3
 
     if len(pattern_matched) == 1:
         return pattern_matched[0]
 
-    return 3
+    return 2
 
 
 def label_explanation_lattice(G_orig, return_raw=False):
