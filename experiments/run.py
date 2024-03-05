@@ -8,9 +8,12 @@ import torch
 from torch_geometric import seed_everything
 from torch_geometric.loader import DataLoader
 from torchmetrics import MetricCollection
-from torchmetrics.classification import (MultilabelAUROC,
+from torchmetrics.classification import (MultilabelAUROC, BinaryAUROC,
                                          MultilabelAccuracy, BinaryAccuracy,
-                                         BinaryAUROC, )
+                                         MultilabelF1Score, BinaryF1Score, 
+                                         MultilabelPrecision, BinaryPrecision,
+                                         MultilabelRecall, BinaryRecall, 
+                                         MultilabelConfusionMatrix, BinaryConfusionMatrix)
 from tqdm import trange
 
 from gnn4ua.datasets.loader import LatticeDataset, Targets, GeneralisationModes
@@ -66,7 +69,18 @@ def run_gnn_training():
                     "accuracy": MultilabelAccuracy(
                         num_labels=train_data.num_classes) if target is Targets.multilabel else BinaryAccuracy(),
                     "auroc": MultilabelAUROC(
-                        num_labels=train_data.num_classes) if target is Targets.multilabel else BinaryAUROC()
+                        num_labels=train_data.num_classes) if target is Targets.multilabel else BinaryAUROC(),
+                    "f1": MultilabelF1Score(
+                        num_labels=train_data.num_classes) if target is Targets.multilabel else BinaryF1Score(),
+                    "precision": MultilabelPrecision(
+                        num_labels=train_data.num_classes) if target is Targets.multilabel else BinaryPrecision(),
+                    "recall": MultilabelRecall(
+                        num_labels=train_data.num_classes) if target is Targets.multilabel else BinaryRecall(),
+                    "confusion": 
+                        MultilabelConfusionMatrix(
+                        num_labels=train_data.num_classes) if target is Targets.multilabel else BinaryConfusionMatrix(),
+                    
+                    
                 }, prefix="train/")
                 test_metrics = train_metrics.clone(prefix="test/")
                 loss_form = torch.nn.BCEWithLogitsLoss()
@@ -141,7 +155,7 @@ def run_gnn_training():
                             # Test set performance
                             for data in DataLoader(test_data, batch_size=2048,
                                                    shuffle=False):
-                                y_pred, _, _ = gnn.forward(data.x, data.edge_index,
+                                y_pred = gnn.forward(data.x, data.edge_index,
                                                            data.batch)
                                 # y_pred.sigmoid()
                                 test_metrics(y_pred, data.y)
@@ -156,7 +170,7 @@ def run_gnn_training():
                     for data in DataLoader(train_data, batch_size=2048,
                                            shuffle=True):
                         x, edge_index, batch = data.x, data.edge_index, data.batch
-                        y_pred, _, _ = gnn.forward(x,
+                        y_pred = gnn.forward(x,
                                                    edge_index,
                                                    batch)
 
@@ -164,9 +178,14 @@ def run_gnn_training():
 
                     for data in DataLoader(test_data, batch_size=1024,
                                            shuffle=False):
-                        y_pred, _, _ = gnn.forward(data.x, data.edge_index,
+                        y_pred = gnn.forward(data.x, data.edge_index,
                                                    data.batch)
-                        y_pred.sigmoid()
+                        # if target == Targets.Distributive:
+                        #     # print(y_pred.shape)
+                        #     y_pred = y_pred.sigmoid()
+                        #     print(torch.hstack([y_pred > 0.5, data.y])[:50,])
+                        #     quit()
+                        y_pred = y_pred.sigmoid()
                         test_metrics(y_pred, data.y)
                     metrics_test = test_metrics.compute()
                     metrics_train = train_metrics.compute()

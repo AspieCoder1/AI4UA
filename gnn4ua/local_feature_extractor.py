@@ -54,15 +54,15 @@ def generate_motifs(model: nn.Module, train_data, test_data,
         edge_mask_type=MaskType.object,
         threshold_config=None
     )
-
+    print(config)
     assert isinstance(explainer.algorithm, PGExplainer)
 
     train_loader = DataLoader(train_data, batch_size=1, shuffle=False)
     test_loader = DataLoader(test_data, batch_size=1, shuffle=False)
-
+    model.eval()
     for epoch in range(n_epochs):
         for train_sample in tqdm(train_loader):
-            explainer.algorithm.train(
+            loss = explainer.algorithm.train(
                 epoch,
                 model,
                 train_sample.x,
@@ -71,6 +71,12 @@ def generate_motifs(model: nn.Module, train_data, test_data,
                 index=0,
                 batch=train_sample.batch
             )
+            # out = explainer(train_sample.x, train_sample.edge_index,
+            #             target=train_sample.y,
+            #             batch=train_sample.batch,
+            #             index=0)
+            # print(loss)
+
 
     explain_list_train: [torch.Tensor] = []
     explain_list_train_classes = []
@@ -80,11 +86,6 @@ def generate_motifs(model: nn.Module, train_data, test_data,
                         target=train_sample.y,
                         batch=train_sample.batch,
                         index=0)
-
-        print(out.edge_weight)
-        print(out.edge_mask)
-        out.visualize_graph()
-        break
 
         explain_list_train.append(
             to_dense_adj(out.edge_index, edge_attr=out.edge_mask))
