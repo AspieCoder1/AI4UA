@@ -41,7 +41,7 @@ def run_gnn_training():
     n_layers = 8
     internal_loss_weight = 0.1
 
-    # we will save all results in this directory
+    # we will save all results_binary in this directory
     results_dir = f"results/"
     os.makedirs(results_dir, exist_ok=True)
 

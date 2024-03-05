@@ -226,7 +226,7 @@ class GLGExplainer(torch.nn.Module):
             if val_metrics["loss"] < best_val_loss and self.hyper["log_models"]:
                 best_val_loss = val_metrics["loss"]
                 torch.save(self.state_dict(),
-                           f"../trained_models/best_so_far/best_so_far_{self.dataset_name}_epoch_{epoch}.pt")
+                           f"trained_models/best_so_far/best_so_far_{self.dataset_name}_epoch_{epoch}.pt")
 
             print(
                 f'{epoch:3d}: Loss: {train_metrics["loss"]:.5f}, LEN: {train_metrics["len_loss"]:2f}, Acc: {train_metrics["acc_overall"]:.2f}, V. Acc: {val_metrics["acc_overall"]:.2f}, V. Loss: {val_metrics["loss"]:.5f}, V. LEN {val_metrics["len_loss"]:.3f}')
@@ -236,7 +236,7 @@ class GLGExplainer(torch.nn.Module):
                 print(f"Loading model at epoch {self.early_stopping.best_epoch}")
                 if self.hyper["log_models"]:
                     self.load_state_dict(torch.load(
-                        f"../trained_models/best_so_far/best_so_far_{self.dataset_name}_epoch_{self.early_stopping.best_epoch}.pt"))
+                        f"trained_models/best_so_far/best_so_far_{self.dataset_name}_epoch_{self.early_stopping.best_epoch}.pt"))
                 else:
                     print("Model not loaded")
                 break

@@ -17,7 +17,7 @@ seed_everything(42)
 
 
 def main():
-    # we will save all results in this directory
+    # we will save all results_binary in this directory
     results_dir = f"results/metrics/"
     metrics = ['auc']
 

@@ -12,7 +12,7 @@ def cli():
 
 
 @cli.command(
-    help="Train BlackBoxGNN and save the results"
+    help="Train BlackBoxGNN and save the results_binary"
 )
 def train_gnns():
     run_gnn_training()
@@ -36,7 +36,7 @@ def train_gnns():
     default='strong',
     help='Generalisation mode used to train the GNN'
 )
-@click.option("--n_epochs", type=int, default=2,
+@click.option("--n_epochs", type=int, default=10,
               help="Number of training epochs for PGExplainer")
 def extract_motifs(task: str, generalisation_mode: str, n_epochs: int):
     task = Targets[task]

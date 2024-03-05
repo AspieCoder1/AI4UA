@@ -80,7 +80,7 @@ class LatticeDataset(InMemoryDataset):
             y = torch.LongTensor([row[label_names].to_list()])
         else:
             label = row[self.target]
-            y = torch.unsqueeze(torch.LongTensor([label]), 0)
+            y = torch.LongTensor([1-label, label])
         return Data(x=x, edge_index=edge_index, y=y)
 
     def process(self):
@@ -112,7 +112,7 @@ class LatticeDataset(InMemoryDataset):
     def num_classes(self) -> int:
         if self.target is Targets.multilabel:
             return 5
-        return 1
+        return 2
 
 
 # Convert to InMemoryDataset to do loading sensibly and also handles the minibatching for us

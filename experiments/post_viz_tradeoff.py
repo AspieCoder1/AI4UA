@@ -29,7 +29,7 @@ plt.rcParams.update({
 sns.set_style("whitegrid")
 
 def main():
-    # we will save all results in this directory
+    # we will save all results_binary in this directory
     results_dir = f"results/metrics/"
     metrics = ['completeness_fidelity']
 

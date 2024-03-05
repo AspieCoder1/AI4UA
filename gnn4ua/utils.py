@@ -23,7 +23,7 @@ def completeness_score(embeddings, y, train_index, test_index,
     classifier.fit(concepts[train_index], y[train_index].detach())
     y_pred = classifier.predict(concepts)
 
-    # evaluate predictions on test set and save results
+    # evaluate predictions on test set and save results_binary
     return roc_auc_score(y[test_index].detach(), y_pred[test_index]), y_pred
 
 
