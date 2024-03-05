@@ -44,7 +44,7 @@ def generate_motifs(model: nn.Module, train_data, test_data,
 
     config = ModelConfig(
         task_level=ModelTaskLevel.graph,
-        mode=ModelMode.binary_classification,
+        mode=ModelMode.multiclass_classification,
         return_type=ModelReturnType.raw,
     )
 
@@ -72,15 +72,16 @@ def generate_motifs(model: nn.Module, train_data, test_data,
                 epoch=epoch,
                 x=train_sample.x,
                 edge_index=train_sample.edge_index,
-                target=train_sample.y,
+                target=train_sample.y.float().squeeze(),
                 batch=train_sample.batch
             )
+
 
     for train_sample in tqdm(train_loader):
         out = explainer(
             x=train_sample.x,
             edge_index=train_sample.edge_index,
-            target=train_sample.y,
+            target=train_sample.y.float().squeeze(),
             batch=train_sample.batch
         )
         new_edge_index, new_edge_mask = to_undirected(edge_index=out.edge_index,
@@ -88,7 +89,7 @@ def generate_motifs(model: nn.Module, train_data, test_data,
                                                       reduce='max')
         explain_list_train.append(
             to_dense_adj(new_edge_index, edge_attr=new_edge_mask))
-        explain_list_train_classes.append(train_sample.y.item())
+        explain_list_train_classes.append(torch.argmax(train_sample.y).item())
 
     np.savez_compressed(f'{path}/x_train', *explain_list_train)
     np.save(f'{path}/y_train', np.array(explain_list_train_classes))
@@ -100,7 +101,7 @@ def generate_motifs(model: nn.Module, train_data, test_data,
         out = explainer(
             x=test_sample.x,
             edge_index=test_sample.edge_index,
-            target=test_sample.y,
+            target=test_sample.y.float().squeeze(),
             batch=test_sample.batch
         )
         new_edge_index, new_edge_mask = to_undirected(edge_index=out.edge_index,
@@ -108,7 +109,7 @@ def generate_motifs(model: nn.Module, train_data, test_data,
                                                       reduce='max')
 
         explain_list_test.append(to_dense_adj(new_edge_index, edge_attr=new_edge_mask))
-        explain_list_test_classes.append(test_sample.y.item())
+        explain_list_test_classes.append(torch.argmax(test_sample.y).item())
 
     np.savez_compressed(f'{path}/x_test', *explain_list_test)
     np.save(f'{path}/y_test', np.array(explain_list_test_classes))
