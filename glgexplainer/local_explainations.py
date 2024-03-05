@@ -43,7 +43,7 @@ pattern_N5.add_edges_from([
 
 
 
-def elbow_method(weights, index_stopped=None, min_num_include=7, backup=None):
+def elbow_method(weights, index_stopped=None, min_num_include=5, backup=None):
     sorted_weights = sorted(weights, reverse=True)
     sorted_weights = np.convolve(sorted_weights, np.ones(min_num_include),
                                  'valid') / min_num_include
