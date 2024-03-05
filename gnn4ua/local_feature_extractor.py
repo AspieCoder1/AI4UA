@@ -49,7 +49,7 @@ def generate_motifs(model: nn.Module, train_data, test_data,
     explainer = Explainer(
         model=model,
         algorithm=GNNExplainer(epochs=n_epochs),
-        explanation_type=ExplanationType.phenomenon,
+        explanation_type=ExplanationType.model,
         model_config=config,
         edge_mask_type=MaskType.object,
         threshold_config=None
@@ -65,7 +65,7 @@ def generate_motifs(model: nn.Module, train_data, test_data,
 
     for train_sample in tqdm(train_loader):
         out = explainer(train_sample.x, train_sample.edge_index,
-                        target=train_sample.y,
+                        # target=train_sample.y,
                         batch=train_sample.batch)
         new_edge_index, new_edge_mask = to_undirected(edge_index=out.edge_index,
                                                       edge_attr=out.edge_mask,
@@ -83,7 +83,7 @@ def generate_motifs(model: nn.Module, train_data, test_data,
 
     for test_sample in tqdm(test_loader):
         out = explainer(test_sample.x, test_sample.edge_index,
-                        target=test_sample.y,
+                        # target=test_sample.y,
                         batch=test_sample.batch)
 
         new_edge_index, new_edge_mask = to_undirected(edge_index=out.edge_index,
