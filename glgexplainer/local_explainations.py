@@ -21,11 +21,6 @@ pattern_M3.add_edges_from([
     (1, 4),
     (2, 4),
     (3, 4),
-    (0, 0),
-    (1, 1),
-    (2, 2),
-    (3, 3),
-    (4, 4)
 ])
 pattern_N5 = nx.Graph()
 pattern_N5.add_edges_from([
@@ -34,11 +29,6 @@ pattern_N5.add_edges_from([
     (1, 3),
     (2, 4),
     (3, 4),
-    (0, 0),
-    (1, 1),
-    (2, 2),
-    (3, 3),
-    (4, 4)
 ])
 
 
@@ -103,7 +93,8 @@ def read_lattice(explainer="PGExplainer", target: Targets = Targets.Distributive
         num_multi_shapes_removed, num_class_relationship_broken, cont_num_iter, num_iter = 0, 0, 0, 0
         for idx, adj in enumerate(data.values()):
             adj = adj.squeeze()
-            G_orig = nx.Graph(adj, undirected=True, remove_self_loops=True)
+            G_orig = nx.Graph(adj, undirected=True)
+            G_orig.remove_edges_from(nx.selfloop_edges(G_orig))
             cut = elbow_method(np.triu(adj).flatten(), index_stopped,
                                min_num_include)
 
