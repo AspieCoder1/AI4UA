@@ -1,4 +1,5 @@
 import copy
+import itertools
 from typing import Literal
 
 import networkx as nx
@@ -10,7 +11,7 @@ from .utils import normalize_belonging
 
 base = "../local_explanations/"
 
-lattice_classnames = ['N5', 'M3', 'N5+M3', 'OTHER']
+# lattice_classnames = ['N5', 'M3', 'N5+M3', 'N5', 'OTHER']
 
 # Patterns for Lattice extraction
 pattern_M3 = nx.Graph()
@@ -22,14 +23,31 @@ pattern_M3.add_edges_from([
     (2, 4),
     (3, 4),
 ])
-pattern_N5 = nx.Graph()
-pattern_N5.add_edges_from([
-    (0, 1),
-    (0, 2),
-    (1, 3),
-    (2, 4),
-    (3, 4),
+
+pattern_N5: nx.Graph = nx.cycle_graph(n=5, create_using=nx.Graph)
+
+pattern_C4: nx.Graph = nx.cycle_graph(n=4, create_using=nx.Graph)
+
+pattern_C6: nx.Graph = nx.cycle_graph(n=6, create_using=nx.Graph)
+
+# C5+e using graphclasses notation
+pattern_house: nx.Graph = nx.house_graph(create_using=nx.Graph)
+
+# C4+e using graph classes notation
+pattern_diamond: nx.Graph = nx.diamond_graph(create_using=nx.Graph)
+
+pattern_BCO: nx.Graph = pattern_C6.copy()
+pattern_BCO.add_edges_from([
+    (0, 6),
+    (6, 7),
+    (7, 2)
 ])
+
+PATTERN_LIST = [pattern_N5, pattern_M3, pattern_C4, pattern_C6, pattern_house]
+pattern_names = ['N5', 'M3', 'C4', 'C6', 'HOUSE']
+lattice_classnames = pattern_names + list(
+    map(lambda x: '+'.join(x), itertools.combinations(pattern_names, r=2))) + ['OTHER']
+
 
 
 def elbow_method(weights, index_stopped=None, min_num_include=7, backup=None):
@@ -53,18 +71,23 @@ def elbow_method(weights, index_stopped=None, min_num_include=7, backup=None):
 
 
 def assign_class_lattice(pattern_matched):
-    if len(pattern_matched) == 0:
-        return 3
+    if len(pattern_matched) == 0 or len(pattern_matched) > 2:
+        return 15
 
     if len(pattern_matched) == 1:
         return pattern_matched[0]
 
-    return 2
+    p1_name = pattern_names[pattern_matched[0]]
+    p2_name = pattern_names[pattern_matched[1]]
+
+    return lattice_classnames.index(f'{p1_name}+{p2_name}')
+
+
 
 
 def label_explanation_lattice(G_orig, return_raw=False):
     pattern_matched = []
-    for i, pattern in enumerate([pattern_N5, pattern_M3]):
+    for i, pattern in enumerate(PATTERN_LIST):
         GM = isomorphism.GraphMatcher(G_orig, pattern)
         if GM.subgraph_is_isomorphic():
             pattern_matched.append(i)
@@ -146,7 +169,7 @@ def evaluate_cutting(ori_adjs, adjs):
         G = nx.Graph(adj)
 
         # count original patterns
-        for pattern in [pattern_N5, pattern_M3]:
+        for pattern in PATTERN_LIST:
             GM = isomorphism.GraphMatcher(G, pattern)
             match = list(GM.subgraph_isomorphisms_iter())
             if len(match) > 0:
@@ -160,7 +183,7 @@ def evaluate_cutting(ori_adjs, adjs):
             if len(cc) > 2:
                 G1 = G.subgraph(cc)
                 pattern_found = False
-                for pattern in [pattern_N5, pattern_M3]:
+                for pattern in PATTERN_LIST:
                     GM = isomorphism.GraphMatcher(G1, pattern)
                     match = list(GM.subgraph_isomorphisms_iter())
                     if len(match) > 0:

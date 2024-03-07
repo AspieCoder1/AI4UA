@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from torch import nn
 from torch_geometric.explain import Explainer
-from torch_geometric.explain.algorithm import PGExplainer
+from torch_geometric.explain.algorithm import GNNExplainer
 from torch_geometric.explain.config import (
     ExplanationType,
     ModelConfig,
@@ -24,7 +24,7 @@ from gnn4ua.models import BlackBoxGNN
 
 
 def generate_motifs(model: nn.Module, train_data, test_data,
-                    root: str = 'local_features/PGExplainer',
+                    root: str = 'local_features/GNNExplainer',
                     task: Targets = Targets.Distributive,
                     generalisation_mode: GeneralisationModes = GeneralisationModes.strong,
                     n_epochs: int = 10):
@@ -50,33 +50,20 @@ def generate_motifs(model: nn.Module, train_data, test_data,
 
     explainer = Explainer(
         model=model,
-        algorithm=PGExplainer(epochs=n_epochs, edge_size=0.0009765625, edge_ent=1.0,
-                              temp=[1.0, 0.5], bias=1.0),
+        algorithm=GNNExplainer(epochs=n_epochs),
         explanation_type=ExplanationType.phenomenon,
         model_config=config,
         edge_mask_type=MaskType.object,
         threshold_config=None
     )
 
-    assert isinstance(explainer.algorithm, PGExplainer)
+    assert isinstance(explainer.algorithm, GNNExplainer)
 
     train_loader = DataLoader(train_data, batch_size=1, shuffle=False)
     test_loader = DataLoader(test_data, batch_size=1, shuffle=False)
 
     explain_list_train: [torch.Tensor] = []
     explain_list_train_classes = []
-
-    for epoch in range(n_epochs):
-        for train_sample in tqdm(train_loader):
-            explainer.algorithm.train(
-                model=model,
-                epoch=epoch,
-                x=train_sample.x,
-                edge_index=train_sample.edge_index,
-                target=train_sample.y.float().squeeze(),
-                batch=train_sample.batch
-            )
-
 
     for train_sample in tqdm(train_loader):
         out = explainer(
