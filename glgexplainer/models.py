@@ -1,19 +1,20 @@
+import time
+
+import matplotlib.pyplot as plt
+import numpy as np
 import torch
 import torch.nn.functional as F
-from torch_geometric.nn import SAGEConv, GCNConv, global_mean_pool, global_add_pool, \
-    global_max_pool, GINConv, GATv2Conv, GraphConv
-from torch_scatter import scatter
 import torch_explain as te
-from torch_explain.logic.nn import entropy
-from torch_explain.logic.metrics import test_explanation, test_explanations
-from sklearn.metrics import accuracy_score
-from sklearn.decomposition import PCA
-from scipy.stats import hmean
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-import numpy as np
 import wandb
-import time
+from scipy.stats import hmean
+from sklearn.decomposition import PCA
+from sklearn.metrics import accuracy_score
+from torch_explain.logic.metrics import test_explanation, test_explanations
+from torch_explain.logic.nn import entropy
+from torch_geometric.nn import (SAGEConv, GCNConv, global_mean_pool, global_add_pool,
+                                global_max_pool, GINConv, GATv2Conv, GraphConv, )
+from torch_scatter import scatter
+
 from . import utils
 
 
@@ -371,6 +372,9 @@ class GLGExplainer(torch.nn.Module):
                                                 target_class=1, mask=torch.arange(
                     x_train.shape[0]).long(), material=False)
 
+            len_fidelity = sum(y_train_1h[:, :].eq(y_pred[:, :] > 0).sum(
+                1) == self.num_classes) / len(y_pred)
+
             if plot:
                 print("For class 1:")
                 print(accuracy1, utils.rewrite_formula_to_close(
@@ -409,26 +413,24 @@ class GLGExplainer(torch.nn.Module):
                                                     material=False)
                 logic_acc = hmean([accuracy0, accuracy1])
 
-            if plot: print("Accuracy as classifier: ", round(accuracy, 4))
-            if plot: print("LEN fidelity: ",
-                           sum(y_train_1h[:, :].eq(y_pred[:, :] > 0).sum(
-                               1) == self.num_classes) / len(y_pred))
+            if plot: print(f"Accuracy as classifier: {round(accuracy, 4)}")
+            if plot: print(f"LEN fidelity: {len_fidelity}")
+
+            metrics = {'logic_acc': logic_acc, "logic_acc_clf": accuracy,
+                       "concept_purity": np.mean(cluster_accs),
+                       "concept_purity_std": np.std(cluster_accs),
+                       "LEN_fidelity": len_fidelity}
 
             print()
             if log_wandb:
                 self.log({"train": {'logic_acc': logic_acc, "logic_acc_clf": accuracy}})
             else:
                 if is_train_set:
-                    self.train_logic_metrics.append(
-                        {'logic_acc': logic_acc, "logic_acc_clf": accuracy,
-                         "concept_purity": np.mean(cluster_accs),
-                         "concept_purity_std": np.std(cluster_accs)})
+                    self.train_logic_metrics.append(metrics)
                 else:
-                    self.val_logic_metrics.append(
-                        {'logic_acc': logic_acc, "logic_acc_clf": accuracy,
-                         "concept_purity": np.mean(cluster_accs),
-                         "concept_purity_std": np.std(cluster_accs)})
+                    self.val_logic_metrics.append(metrics)
         self.len_model.to(self.device)
+        return metrics
 
     def compute_losses(self, le_embeddings, prototype_assignements, total_losses,
                        concept_vector, y_train_1h, le_y):

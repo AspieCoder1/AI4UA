@@ -17,11 +17,16 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
                      seed: Literal['102', '106', '270']):
     DATASET_NAME = task
 
-    click.secho("Loading hyperparameters...", fg="blue", bold=True)
+    click.secho(
+        f"RUNNING GLGEXPLAINER ON {DATASET_NAME.capitalize()}-{generalisation_mode.capitalize()} (SEED {seed})",
+        fg='blue', bold=True, underline=True)
+
+    click.echo()
+    click.secho("Loading hyperparameters...")
     with open(f"config/{DATASET_NAME}_params.json") as json_file:
         hyper_params = json.load(json_file)
 
-    click.secho("Processing datasets...", fg="blue", bold=True)
+    click.secho("Processing datasets...")
     adjs_train, edge_weights_train, ori_classes_train, belonging_train, summary_predictions_train, le_classes_train = read_lattice(
         seed=seed,
         explainer='GNNExplainer',
@@ -83,6 +88,7 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
     click.secho("Test GLGExplainer...")
     results = expl.inspect(test_group_loader)
 
+    click.secho("Writing results...")
     csv_exists = os.path.exists('GLGExplainer_results.csv')
 
     with open('GLGExplainer_results.csv', 'a+') as csvfile:
