@@ -1,3 +1,5 @@
+from typing import Literal
+
 import click
 
 from experiments.run import run_gnn_training
@@ -64,11 +66,13 @@ def extract_motifs(task: str, generalisation_mode: str, n_epochs: int, seed: str
     default='strong',
     help='Generalisation mode used to train the GNN'
 )
-def train_explainer(task: str, generalisation_mode: str):
+@click.option("--seed", type=click.Choice(['102', '106', '270']), default='102')
+def train_explainer(task: str, generalisation_mode: str,
+                    seed: Literal['102', '106', '270']) -> None:
     task = Targets[task]
     generalisation_mode = GeneralisationModes[generalisation_mode]
 
-    run_glgexplainer(task, generalisation_mode)
+    run_glgexplainer(task, generalisation_mode, seed)
 
 
 if __name__ == '__main__':
