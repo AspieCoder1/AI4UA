@@ -17,6 +17,7 @@ class Targets(StrEnum):
     Modular = 'Modular'
     Meet_SemiDistributive = 'Meet_SemiDistributive'
     Join_SemiDistributive = 'Join_SemiDistributive'
+    SemiDistributive = 'SemiDistributive'
     multilabel = 'multilabel'
 
 

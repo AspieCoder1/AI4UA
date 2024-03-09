@@ -31,7 +31,8 @@ def run_gnn_training():
     dataset = 'samples_50_saved'
     temperature = 1
     targets = [Targets.multilabel, Targets.Distributive, Targets.Modular,
-               Targets.Meet_SemiDistributive, Targets.Join_SemiDistributive]
+               Targets.Meet_SemiDistributive, Targets.Join_SemiDistributive, Targets.SemiDistributive]
+    targets = [Targets.SemiDistributive]
     generalisation_modes = [GeneralisationModes.strong, GeneralisationModes.weak]
     train_epochs = 200
     emb_size = 16
