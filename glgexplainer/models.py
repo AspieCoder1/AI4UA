@@ -419,7 +419,7 @@ class GLGExplainer(torch.nn.Module):
             metrics = {'logic_acc': logic_acc, "logic_acc_clf": accuracy,
                        "concept_purity": np.mean(cluster_accs),
                        "concept_purity_std": np.std(cluster_accs),
-                       "LEN_fidelity": len_fidelity}
+                       "LEN_fidelity": len_fidelity.item()}
 
             print()
             if log_wandb:

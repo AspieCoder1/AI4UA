@@ -26,7 +26,7 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
     with open(f"config/{DATASET_NAME}_params.json") as json_file:
         hyper_params = json.load(json_file)
 
-    click.secho("Processing datasets...")
+    click.echo("Processing datasets...")
     adjs_train, edge_weights_train, ori_classes_train, belonging_train, summary_predictions_train, le_classes_train = read_lattice(
         seed=seed,
         explainer='GNNExplainer',
@@ -48,7 +48,7 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
         T.NormalizeFeatures(),
     ])
 
-    click.secho("Setup datasets...", fg="blue", bold=True)
+    click.echo("Setup datasets...")
     dataset_train = utils.LocalExplanationsDataset("data_glg", adjs_train, "same",
                                                    transform=transform,
                                                    y=le_classes_train,
@@ -82,11 +82,11 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
                             train_group_loader.dataset.data.task_y.unique())
                         ).to(device)
 
-    click.secho("Train GLGExplainer...", fg="blue", bold=True)
+    click.echo("Train GLGExplainer...")
     expl.iterate(train_group_loader, test_group_loader, plot=False)
 
-    click.secho("Test GLGExplainer...")
-    results = expl.inspect(test_group_loader)
+    click.echo("Test GLGExplainer...")
+    results = expl.inspect(test_group_loader, plot=False)
 
     click.secho("Writing results...")
     csv_exists = os.path.exists('GLGExplainer_results.csv')
@@ -96,7 +96,7 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
                                 fieldnames=['task', 'mode', 'seed', 'logic_acc',
                                             'logic_acc_clf', 'concept_purity',
                                             'concept_purity_std', 'LEN_fidelity'])
-        row = results + {'task': task, 'mode': generalisation_mode, 'seed': seed}
+        row = results | {'task': task, 'mode': generalisation_mode, 'seed': seed}
         if not csv_exists:
             writer.writeheader()
         writer.writerow(row)
