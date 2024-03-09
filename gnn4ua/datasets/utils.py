@@ -94,6 +94,7 @@ def prepare_dataset_json(lattices):
                 "Meet_SemiDistributive": lattice.meet_semi_dist,
                 "Join_SemiDistributive": lattice.join_semi_dist,
                 "SemiDistributive": lattice.semi_dist,
+                "QuasiCancellitive": lattice.quasi_cancel,
                 # "Agruesian_n2": lattice.agru_n2
             }
             # create and write json lattice

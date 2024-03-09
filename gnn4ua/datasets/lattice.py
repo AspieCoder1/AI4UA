@@ -27,7 +27,8 @@ class Lattice:
         self.join_semi_dist = False
         self.semi_dist = False
         # our super cool code contribution 
-        self.agru_n2 = False
+        # self.agru_n2 = False
+        self.quasi_cancel = False
 
         #compute the matrices of majorities and minorities, for al n,m maj[n,m] = [0,..,0,1,0...] 1 for elements that are >= n,m 0 otherwise
         self.majority_tensor, self.minority_tensor = self.compute_majmin_tensors()
@@ -40,7 +41,8 @@ class Lattice:
             self.meet_semi_dist = self.is_meet_semidistributive()
             self.join_semi_dist = self.is_join_semidistributive()
             self.semi_dist = self.is_semidistributive()
-            self.agru_n2 = self.is_agruesian_n_2()
+            # self.agru_n2 = self.is_agruesian_n_2()
+            self.quasi_cancel = self.is_cancellative()
             self.adj = self.loe2adj()
 
     def is_distributive(self):
@@ -210,15 +212,16 @@ class Lattice:
         z = torch.cat([z] * self.size ** 2)
 
         x_meet_z = self.meet_tensor[x, z]
-        y_meet_z = self.meet_tensorp[y, z]
-        meet_eq = x_meet_z == y_meet_z
+        y_meet_z = self.meet_tensor[y, z]
+        meet_eq = torch.eq(x_meet_z, y_meet_z)
 
         x_join_z = self.join_tensor[x, z]
         y_join_z = self.join_tensor[y, z]
-        join_eq = x_join_z == y_join_z
+        join_eq = torch.eq(x_join_z, y_join_z)
 
-        both_eq = meet_eq and join_eq
-        impl = (x == y) or not both_eq  
+        both_eq = torch.logical_and(meet_eq, join_eq)
+
+        impl = torch.logical_or(torch.eq(x, y), torch.logical_not(both_eq))
         
         if torch.all(impl):
             return True

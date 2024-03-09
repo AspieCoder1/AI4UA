@@ -53,7 +53,7 @@ class LatticeDataset(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> str:
-        return 'samples_50_saved.json'
+        return 'samples_50_saved_old.json'
 
     @property
     def processed_file_names(self) -> str:
@@ -62,7 +62,7 @@ class LatticeDataset(InMemoryDataset):
     def download(self):
         download_url(
             url='https://drive.google.com/uc?export=download&id=1KP67FfoS_0IjuwSmV_8QODvDmL5SLhwp',
-            folder=self.raw_dir, filename='samples_50_saved.json')
+            folder=self.raw_dir, filename='samples_50_saved_old.json')
 
     def create_graph(self, row):
         adj_matrix = np.array(row['Adj_matrix'])
