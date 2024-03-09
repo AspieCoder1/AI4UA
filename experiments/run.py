@@ -69,7 +69,7 @@ def run_gnn_training():
                         num_labels=train_data.num_classes) if target is Targets.multilabel else BinaryAUROC()
                 }, prefix="train/")
                 test_metrics = train_metrics.clone(prefix="test/")
-                loss_form = torch.nn.BCEWithLogitsLoss()
+                loss_form = torch.nn.BCEWithLogitsLoss() if target is Targets.multilabel else torch.nn.CrossEntropyLoss()
 
                 # load data and set up cross-validation
                 # data = load_data(dataset, label_name=label_name,
