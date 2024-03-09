@@ -100,8 +100,8 @@ def label_explanation_lattice(G_orig, return_raw=False):
 def read_lattice(explainer="PGExplainer", target: Targets = Targets.Distributive,
                  mode: GeneralisationModes = GeneralisationModes.strong,
                  split: Literal['train', 'test'] = 'train', min_num_include: int = 7,
-                 evaluate_method=False):
-    base_path = f"local_features/{explainer}/{target}_{mode}/"
+                 evaluate_method=False, seed: Literal['102', '106', '270'] = '102'):
+    base_path = f"local_features/{explainer}/{seed}/{target}_{mode}/"
     adjs, edge_weights, index_stopped = [], [], []
     ori_adjs, ori_edge_weights, ori_classes, belonging, ori_predictions = [], [], [], [], []
     precomputed_embeddings, gnn_embeddings = [], []
