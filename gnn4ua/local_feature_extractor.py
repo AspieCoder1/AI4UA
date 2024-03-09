@@ -27,7 +27,8 @@ def generate_motifs(model: nn.Module, train_data, test_data,
                     root: str = 'local_features/GNNExplainer',
                     task: Targets = Targets.Distributive,
                     generalisation_mode: GeneralisationModes = GeneralisationModes.strong,
-                    n_epochs: int = 10):
+                    n_epochs: int = 10,
+                    seed: str = '102'):
     """
     Uses PGExplainer to generate motif features from the datasets.
 
@@ -37,7 +38,7 @@ def generate_motifs(model: nn.Module, train_data, test_data,
     """
 
     model.eval()
-    path = f'{root}/{task}_{generalisation_mode}'
+    path = f'{root}/{seed}/{task}_{generalisation_mode}'
 
     if not os.path.exists(path):
         os.makedirs(path, exist_ok=True)
@@ -104,7 +105,7 @@ def generate_motifs(model: nn.Module, train_data, test_data,
 
 
 def generate_local_motif(task: Targets, generalisation_mode: GeneralisationModes,
-                         n_epochs: int):
+                         n_epochs: int, seed: str = '102'):
     n_layers = 8
     emb_size = 16
 
@@ -119,11 +120,12 @@ def generate_local_motif(task: Targets, generalisation_mode: GeneralisationModes
                       n_layers)
 
     gnn.load_state_dict(torch.load(
-        f'results/task_{task}/models/BlackBoxGNN_generalization_{generalisation_mode}_seed_102_temperature_1_embsize_16.pt'))
+        f'results/task_{task}/models/BlackBoxGNN_generalization_{generalisation_mode}_seed_{seed}_temperature_1_embsize_16.pt'))
 
     generate_motifs(gnn, train_data, test_data,
                     task=task,
-                    generalisation_mode=generalisation_mode, n_epochs=n_epochs)
+                    generalisation_mode=generalisation_mode, n_epochs=n_epochs,
+                    seed=seed)
 
 
 @click.command('generate-local-motifs')
