@@ -6,3 +6,9 @@ gnn4ua/datasets/*.joblib
 .idea/
 *.joblib
 data/
+
+results/
+results_binary/
+local_features/
+data_test
+samples_*.json
