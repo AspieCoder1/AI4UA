@@ -8,12 +8,12 @@ import torch
 from torch_geometric import seed_everything
 from torch_geometric.loader import DataLoader
 from torchmetrics import MetricCollection
-from torchmetrics.classification import (MultilabelAUROC, BinaryAUROC,
-                                         MultilabelAccuracy, BinaryAccuracy,
-                                         MultilabelF1Score, BinaryF1Score, 
-                                         MultilabelPrecision, BinaryPrecision,
-                                         MultilabelRecall, BinaryRecall, 
-                                         MultilabelConfusionMatrix, BinaryConfusionMatrix)
+from torchmetrics.classification import (MultilabelAUROC, MulticlassAUROC,
+                                         MultilabelAccuracy, MulticlassAccuracy,
+                                         MultilabelF1Score, MulticlassF1Score, 
+                                         MultilabelPrecision, MulticlassPrecision,
+                                         MultilabelRecall, MulticlassRecall, 
+                                         MultilabelConfusionMatrix, MulticlassConfusionMatrix)
 from tqdm import trange
 
 from gnn4ua.datasets.loader import LatticeDataset, Targets, GeneralisationModes
@@ -30,9 +30,10 @@ def run_gnn_training():
     random_states = np.random.RandomState(42).randint(0, 1000, size=5)
     dataset = 'samples_50_saved'
     temperature = 1
-    targets = [Targets.multilabel, Targets.Distributive, Targets.Modular,
-               Targets.Meet_SemiDistributive, Targets.Join_SemiDistributive, Targets.SemiDistributive]
-    targets = [Targets.SemiDistributive]
+    # targets = [Targets.multilabel, Targets.Distributive, Targets.Modular,
+    #            Targets.Meet_SemiDistributive, Targets.Join_SemiDistributive, Targets.SemiDistributive]
+    targets = [Targets.Meet_SemiDistributive, Targets.Join_SemiDistributive, Targets.SemiDistributive]
+    # targets = [Targets.Distributive]
     generalisation_modes = [GeneralisationModes.strong, GeneralisationModes.weak]
     train_epochs = 200
     emb_size = 16
@@ -68,23 +69,23 @@ def run_gnn_training():
 
                 train_metrics = MetricCollection({
                     "accuracy": MultilabelAccuracy(
-                        num_labels=train_data.num_classes) if target is Targets.multilabel else BinaryAccuracy(),
+                        num_labels=train_data.num_classes) if target is Targets.multilabel else MulticlassAccuracy(num_classes=2),
                     "auroc": MultilabelAUROC(
-                        num_labels=train_data.num_classes) if target is Targets.multilabel else BinaryAUROC(),
+                        num_labels=train_data.num_classes) if target is Targets.multilabel else MulticlassAUROC(num_classes=2),
                     "f1": MultilabelF1Score(
-                        num_labels=train_data.num_classes) if target is Targets.multilabel else BinaryF1Score(),
+                        num_labels=train_data.num_classes) if target is Targets.multilabel else MulticlassF1Score(num_classes=2),
                     "precision": MultilabelPrecision(
-                        num_labels=train_data.num_classes) if target is Targets.multilabel else BinaryPrecision(),
+                        num_labels=train_data.num_classes) if target is Targets.multilabel else MulticlassPrecision(num_classes=2),
                     "recall": MultilabelRecall(
-                        num_labels=train_data.num_classes) if target is Targets.multilabel else BinaryRecall(),
+                        num_labels=train_data.num_classes) if target is Targets.multilabel else MulticlassRecall(num_classes=2),
                     "confusion": 
                         MultilabelConfusionMatrix(
-                        num_labels=train_data.num_classes) if target is Targets.multilabel else BinaryConfusionMatrix(),
+                        num_labels=train_data.num_classes) if target is Targets.multilabel else MulticlassConfusionMatrix(num_classes=2),
                     
                     
                 }, prefix="train/")
                 test_metrics = train_metrics.clone(prefix="test/")
-                loss_form = torch.nn.BCEWithLogitsLoss()
+                loss_form = torch.nn.CrossEntropyLoss()
 
                 # load data and set up cross-validation
                 # data = load_data(dataset, label_name=label_name,
@@ -136,12 +137,14 @@ def run_gnn_training():
                                     y_pred = out
                                 else:
                                     y_pred, node_concepts, graph_concepts = out
-
-                                train_metrics(y_pred, data.y)
-
+                                
+                                # print(y_pred.shape, data.y.shape)
+                                # print(data.y)
+                                # train_metrics(y_pred, data.y)
+                                # quit()
                                 # compute loss
                                 main_loss = loss_form(y_pred,
-                                                      data.y.float())
+                                                      data.y)
                                 internal_loss = 0
                                 if gnn.__class__.__name__ == 'HierarchicalGCN':
                                     internal_loss = gnn.internal_loss(graph_concepts,
@@ -175,7 +178,14 @@ def run_gnn_training():
                                                    edge_index,
                                                    batch)
 
+                        # print(y_pred.shape, data.y.shape)
+                        # print(data.y)
+                        # print(train_metrics)
                         train_metrics(y_pred, data.y)
+                        # print(t)
+                        # quit()
+                        # print('got here')
+                        # quit()
 
                     for data in DataLoader(test_data, batch_size=1024,
                                            shuffle=False):
@@ -186,7 +196,7 @@ def run_gnn_training():
                         #     y_pred = y_pred.sigmoid()
                         #     print(torch.hstack([y_pred > 0.5, data.y])[:50,])
                         #     quit()
-                        y_pred = y_pred.sigmoid()
+                        # y_pred = y_pred.sigmoid()
                         test_metrics(y_pred, data.y)
                     metrics_test = test_metrics.compute()
                     metrics_train = train_metrics.compute()

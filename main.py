@@ -24,7 +24,7 @@ def train_gnns():
 @click.option(
     '--task',
     type=click.Choice(
-        ['Distributive', 'Modular', 'Meet_SemiDistributive', 'Join_SemiDistributive',
+        ['Distributive', 'Modular', 'Meet_SemiDistributive', 'Join_SemiDistributive', 'SemiDistributive',
          'multilabel']
     ),
     default='Distributive',
@@ -52,7 +52,7 @@ def extract_motifs(task: str, generalisation_mode: str, n_epochs: int, seed: str
 @click.option(
     '--task',
     type=click.Choice(
-        ['Distributive', 'Modular', 'Meet_SemiDistributive', 'Join_SemiDistributive', 
+        ['Distributive', 'Modular', 'Meet_SemiDistributive', 'Join_SemiDistributive', 'SemiDistributive',
          'multilabel']
     ),
     default='Distributive',

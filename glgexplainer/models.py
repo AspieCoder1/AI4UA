@@ -638,8 +638,3 @@ def LEN(input_shape, temperature, n_classes=2, remove_attention=False):
         torch.nn.Linear(5, 1),
     ]
     return torch.nn.Sequential(*layers)
-
-
-
-
-

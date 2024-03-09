@@ -81,7 +81,7 @@ class LatticeDataset(InMemoryDataset):
             y = torch.LongTensor([row[label_names].to_list()])
         else:
             label = row[self.target]
-            y = torch.LongTensor([1-label, label])
+            y = torch.LongTensor([label])
         return Data(x=x, edge_index=edge_index, y=y)
 
     def process(self):
