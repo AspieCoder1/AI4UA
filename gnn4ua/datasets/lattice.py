@@ -198,6 +198,32 @@ class Lattice:
         #     return False
         # return True
 
+    def is_cancellative(self):
+        x = torch.tensor(np.arange(self.size)).to(device)
+        x = x.repeat_interleave(self.size ** 2 , dim=0)
+        
+        y = torch.tensor(np.arange(self.size)).to(device)
+        y = y.repeat_interleave(self.size ** 1 , dim=0)
+        y = torch.cat([y] * self.size ** 1)
+        
+        z = torch.tensor(np.arange(self.size)).to(device)
+        z = torch.cat([z] * self.size ** 2)
+
+        x_meet_z = self.meet_tensor[x, z]
+        y_meet_z = self.meet_tensorp[y, z]
+        meet_eq = x_meet_z == y_meet_z
+
+        x_join_z = self.join_tensor[x, z]
+        y_join_z = self.join_tensor[y, z]
+        join_eq = x_join_z == y_join_z
+
+        both_eq = meet_eq and join_eq
+        impl = (x == y) or not both_eq  
+        
+        if torch.all(impl):
+            return True
+        else:
+            return False
 
     def compute_majmin_tensors(self):
         '''
