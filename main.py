@@ -38,7 +38,7 @@ def train_gnns():
 )
 @click.option("--n_epochs", type=int, default=1,
               help="Number of training epochs for PGExplainer")
-@click.option("--seed", type=click.Option(['102', '106', '270']), default='102')
+@click.option("--seed", type=click.Choice(['102', '106', '270']), default='102')
 def extract_motifs(task: str, generalisation_mode: str, n_epochs: int, seed: str):
     task = Targets[task]
     generalisation_mode = GeneralisationModes[generalisation_mode]
