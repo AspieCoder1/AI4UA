@@ -1,0 +1,8 @@
+n_epochs: 1
+pgexplainer_coeffs:
+  bias: 1.0
+  edge_ent: 0.1
+  edge_size: 0.005
+  temp:
+  - 1.25
+  - 0.625
