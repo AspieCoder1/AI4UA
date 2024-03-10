@@ -244,7 +244,7 @@ class GLGExplainer(torch.nn.Module):
                 else:
                     print("Model not loaded")
                 break
-        click.echo(f"Best epoch: {self.early_stopping.best_epoch}", underline=True,
+        click.secho(f"Best epoch: {self.early_stopping.best_epoch}", underline=True,
                    bold=True)
         click.secho(f"Trained lasted for {round(time.time() - start_time)} seconds",
                     bold=True, underline=True)
