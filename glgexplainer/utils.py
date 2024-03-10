@@ -252,17 +252,19 @@ def rewrite_formula_to_close(formula):
     remove every negated literal assuming that missing literals are by default negated
     """
     ret = []
+    literals = set()
     for clause in formula.split("|"):
         tmp = "("
         for f in clause.split("&"):
             if "~" not in f:
+                literals.add(f)
                 if tmp != "(":
                     tmp += " & "
                 tmp += f.strip().replace(")", "")
         tmp += ")"
         ret.sort(key=lambda x: len(x))
         ret.append(tmp)
-    return " | ".join(ret), len(ret)
+    return " | ".join(ret), len(literals)
 
 
 def assemble_raw_explanations(explanations_raw):

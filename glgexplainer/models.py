@@ -1,5 +1,6 @@
 import time
 
+import click
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -24,7 +25,7 @@ class GLGExplainer(torch.nn.Module):
     """
 
     def __init__(self, len_model, le_model, device, hyper_params, classes_names,
-                 dataset_name, num_classes):
+                 dataset_name, num_classes, plot_dir: str = 'GLGExplainer_plots/'):
         super().__init__()
 
         self.le_model = le_model
@@ -53,6 +54,8 @@ class GLGExplainer(torch.nn.Module):
             {'params': len_model.parameters(), 'lr': self.hyper["len_lr"]})
         self.optimizer.add_param_group(
             {'params': self.prototype_vectors, 'lr': self.hyper["proto_lr"]})
+        self.plot_dir = plot_dir
+        self.epoch = 0
 
         if hyper_params["focal_loss"]:
             self.loss_len = utils.focal_loss
@@ -207,7 +210,7 @@ class GLGExplainer(torch.nn.Module):
             wandb.watch(self.len_model)
 
         if plot:
-            self.inspect(train_loader)
+            self.inspect(train_loader, train_epoch=0, is_train_set=True)
 
         start_time = time.time()
         best_val_loss = np.inf
@@ -216,9 +219,9 @@ class GLGExplainer(torch.nn.Module):
             val_metrics = self.train_epoch(val_loader, train=False)
 
             if epoch % 20 == 0:
-                self.inspect(train_loader, self.hyper["log_wandb"], plot=plot)
-                self.inspect(val_loader, log_wandb=False, plot=False,
-                             is_train_set=False)
+                self.inspect(train_loader, self.hyper["log_wandb"], plot=plot,
+                             train_epoch=epoch, is_train_set=True)
+                self.inspect(val_loader, log_wandb=False, plot=False)
 
             self.temp -= (self.hyper["ts"] - self.hyper["te"]) / self.hyper[
                 "num_epochs"]
@@ -229,7 +232,7 @@ class GLGExplainer(torch.nn.Module):
                 torch.save(self.state_dict(),
                            f"trained_models/best_so_far/best_so_far_{self.dataset_name}_epoch_{epoch}.pt")
 
-            print(
+            click.echo(
                 f'{epoch:3d}: Loss: {train_metrics["loss"]:.5f}, LEN: {train_metrics["len_loss"]:2f}, Acc: {train_metrics["acc_overall"]:.2f}, V. Acc: {val_metrics["acc_overall"]:.2f}, V. Loss: {val_metrics["loss"]:.5f}, V. LEN {val_metrics["len_loss"]:.3f}')
 
             if self.early_stopping.on_epoch_end(epoch, val_metrics["loss"]):
@@ -241,8 +244,10 @@ class GLGExplainer(torch.nn.Module):
                 else:
                     print("Model not loaded")
                 break
-        print(f"Best epoch: {self.early_stopping.best_epoch}")
-        print(f"Trained lasted for {round(time.time() - start_time)} seconds")
+        click.echo(f"Best epoch: {self.early_stopping.best_epoch}", underline=True,
+                   bold=True)
+        click.secho(f"Trained lasted for {round(time.time() - start_time)} seconds",
+                    bold=True, underline=True)
 
         if self.hyper["log_wandb"]:
             if self.hyper["log_models"]:
@@ -260,8 +265,12 @@ class GLGExplainer(torch.nn.Module):
         #         pickle.dump(self.val_logic_metrics, handle)
         return
 
-    def inspect(self, loader, log_wandb=False, plot=True, is_train_set=False):
+    def inspect(self, loader, log_wandb=False, plot=True, is_train_set=False,
+                train_epoch=0):
+        click.echo()
         self.eval()
+        click.secho(f"INSPECTING MODEL (TRAIN={is_train_set})", bold=True, fg='green',
+                    underline=True)
 
         with torch.no_grad():
             x_train, emb, concepts_assignement, y_train_1h, le_classes, le_idxs, belonging = self.get_concept_vector(
@@ -278,7 +287,7 @@ class GLGExplainer(torch.nn.Module):
                 fig = plt.figure(figsize=(17, 4))
                 plt.subplot(1, 2, 1)
                 plt.title("local explanations embeddings", size=23)
-                print(np.unique(le_classes, return_counts=True))
+                click.echo(np.unique(le_classes, return_counts=True))
                 for c in np.unique(le_classes):
                     plt.scatter(emb2d[le_classes == c, 0], emb2d[le_classes == c, 1],
                                 label=self.classes_names[int(c)], alpha=0.7)
@@ -314,17 +323,18 @@ class GLGExplainer(torch.nn.Module):
 
                 if log_wandb and self.hyper["log_images"]:
                     wandb.log({"plots": wandb.Image(plt)})
-                if self.prototype_vectors.shape[1] > 2: print(
+                if self.prototype_vectors.shape[1] > 2: click.echo(
                     pca.explained_variance_ratio_)
                 fig.supxlabel('principal comp. 1', size=20)
                 fig.supylabel('principal comp. 2', size=20)
-                # plt.savefig("embedding_bamultishapesmc.pdf")
-                plt.show()
+                plot_name = f'step-{train_epoch}' if is_train_set else 'test-results'
+                plt.savefig(f"{self.plot_dir}/{plot_name}.pdf")
+                # plt.show()
 
                 # log stats
-            if isinstance(self.len_model[0], te.nn.logic.EntropyLinear) and plot:
-                print("Alpha norms:")
-                print(self.len_model[0].alpha_norm)
+            if isinstance(self.len_model[0], te.nn.logic.EntropyLinear):
+                click.secho("Alpha norms:", bold=True)
+                click.echo(self.len_model[0].alpha_norm)
 
             self.len_model.to("cpu")
             x_train = x_train.detach().cpu()
@@ -348,14 +358,16 @@ class GLGExplainer(torch.nn.Module):
             cluster_accs = utils.get_cluster_accuracy(concept_predictions, le_classes)
             formula_0, formula_length_0 = utils.rewrite_formula_to_close(
                 utils.assemble_raw_explanations(explanation_raw))
-            if plot:
-                print(
-                    f"Concept Purity: {np.mean(cluster_accs):2f} +- {np.std(cluster_accs):2f}")
-                print("Concept distribution: ",
-                      np.unique(concept_predictions, return_counts=True))
-                print("Logic formulas:")
-                print("For class 0:")
-                print(accuracy0, formula_0)
+            click.secho(
+                f"Concept Purity: {np.mean(cluster_accs):2f} +- {np.std(cluster_accs):2f}",
+                bold=True)
+            click.secho(
+                f"Concept distribution: {np.unique(concept_predictions, return_counts=True)}",
+                bold=True
+            )
+            click.secho("Logic formulas:", bold=True)
+            click.echo("For class 0:")
+            click.echo(accuracy0, formula_0)
 
             explanation1, explanation_raw = entropy.explain_class(self.len_model,
                                                                   x_train, y_train_1h,
@@ -378,9 +390,8 @@ class GLGExplainer(torch.nn.Module):
             formula_1, formula_length_1 = utils.rewrite_formula_to_close(
                 utils.assemble_raw_explanations(explanation_raw))
 
-            if plot:
-                print("For class 1:")
-                print(accuracy1, formula_1)
+            click.echo("For class 1:")
+            click.echo(accuracy1, formula_1)
 
             if self.num_classes == 3:
                 explanation2, explanation_raw = entropy.explain_class(self.len_model,
@@ -402,8 +413,8 @@ class GLGExplainer(torch.nn.Module):
                 if plot:
                     formula, length = utils.rewrite_formula_to_close(
                         utils.assemble_raw_explanations(explanation_raw))
-                    print("For class 2:")
-                    print(accuracy2, formula)
+                    click.echo("For class 2:")
+                    click.echo(accuracy2, formula)
                 accuracy, preds = test_explanations(
                     [explanation0, explanation1, explanation2], x_train, y_train_1h,
                     mask=torch.arange(x_train.shape[0]).long(), material=False)
@@ -416,8 +427,9 @@ class GLGExplainer(torch.nn.Module):
                                                     material=False)
                 logic_acc = hmean([accuracy0, accuracy1])
 
-            if plot: print(f"Accuracy as classifier: {round(accuracy, 4)}")
-            if plot: print(f"LEN fidelity: {len_fidelity}")
+            click.secho(f"Accuracy as classifier: {round(accuracy, 4)}",
+                                 bold=True)
+            click.secho(f"LEN fidelity: {len_fidelity}", bold=True)
 
             metrics = {'logic_acc': logic_acc, "logic_acc_clf": accuracy,
                        "concept_purity": np.mean(cluster_accs),
@@ -427,7 +439,6 @@ class GLGExplainer(torch.nn.Module):
                        "formula_len_1": formula_length_1
                        }
 
-            print()
             if log_wandb:
                 self.log({"train": {'logic_acc': logic_acc, "logic_acc_clf": accuracy}})
             else:
@@ -436,6 +447,7 @@ class GLGExplainer(torch.nn.Module):
                 else:
                     self.val_logic_metrics.append(metrics)
         self.len_model.to(self.device)
+        click.echo()
         return metrics
 
     def compute_losses(self, le_embeddings, prototype_assignements, total_losses,

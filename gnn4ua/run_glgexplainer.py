@@ -21,12 +21,11 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
         f"RUNNING GLGEXPLAINER ON {DATASET_NAME.capitalize()}-{generalisation_mode.capitalize()} (SEED {seed})",
         fg='blue', bold=True, underline=True)
 
-    click.echo()
-    click.secho("Loading hyperparameters...")
+    click.secho("Loading hyperparameters...", bold=True)
     with open(f"config/{DATASET_NAME}_params.json") as json_file:
         hyper_params = json.load(json_file)
 
-    click.echo("Processing datasets...")
+    click.secho("Processing datasets...", bold=True)
     adjs_train, edge_weights_train, ori_classes_train, belonging_train, summary_predictions_train, le_classes_train = read_lattice(
         seed=seed,
         explainer='GNNExplainer',
@@ -48,7 +47,7 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
         T.NormalizeFeatures(),
     ])
 
-    click.echo("Setup datasets...")
+    click.secho("Setup datasets...", bold=True)
     dataset_train = utils.LocalExplanationsDataset("data_glg", adjs_train, "same",
                                                    transform=transform,
                                                    y=le_classes_train,
@@ -65,6 +64,10 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
     test_group_loader = utils.build_dataloader(dataset_test, belonging_test,
                                                num_input_graphs=256)
 
+    click.secho("Creating plot directory", bold=True)
+    plot_dir = f'GLGExplainer_plots/{seed}/{task}-{generalisation_mode}'
+    os.makedirs(plot_dir, exist_ok=True)
+
     torch.manual_seed(42)
     len_model = LEN(hyper_params["num_prototypes"],
                     hyper_params["LEN_temperature"],
@@ -79,16 +82,17 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
                         classes_names=lattice_classnames,
                         dataset_name=DATASET_NAME,
                         num_classes=len(
-                            train_group_loader.dataset.data.task_y.unique())
+                            train_group_loader.task_y.unique()),
+                        plot_dir=plot_dir
                         ).to(device)
 
-    click.echo("Train GLGExplainer...")
-    expl.iterate(train_group_loader, test_group_loader, plot=False)
+    click.secho("Train GLGExplainer...", bold=True)
+    expl.iterate(train_group_loader, test_group_loader, plot=True)
 
-    click.echo("Test GLGExplainer...")
-    results = expl.inspect(test_group_loader, plot=False)
+    click.secho("Test GLGExplainer...", bold=True)
+    results = expl.inspect(test_group_loader, plot=True)
 
-    click.secho("Writing results...")
+    click.secho("Writing results...", bold=True)
     csv_exists = os.path.exists('GLGExplainer_results.csv')
 
     with open('GLGExplainer_results.csv', 'a+') as csvfile:
