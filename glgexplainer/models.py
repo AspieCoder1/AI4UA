@@ -328,7 +328,8 @@ class GLGExplainer(torch.nn.Module):
                 fig.supxlabel('principal comp. 1', size=20)
                 fig.supylabel('principal comp. 2', size=20)
                 plot_name = f'step-{train_epoch}' if is_train_set else 'test-results'
-                plt.savefig(f"{self.plot_dir}/{plot_name}.pdf")
+                plt.savefig(f"{self.plot_dir}/{plot_name}.pdf", dpi=300,
+                            bbox_inches='tight')
                 # plt.show()
 
                 # log stats
@@ -436,14 +437,16 @@ class GLGExplainer(torch.nn.Module):
                        "concept_purity_std": np.std(cluster_accs),
                        "LEN_fidelity": len_fidelity.item(),
                        "formula_len_0": formula_length_0,
-                       "formula_len_1": formula_length_1
+                       "formula_len_1": formula_length_1,
+                       'formula_0': formula_0,
+                       'formula_1': formula_1
                        }
 
             if log_wandb:
                 self.log({"train": {'logic_acc': logic_acc, "logic_acc_clf": accuracy}})
             else:
                 if is_train_set:
-                    self.train_logic_metrics.append(metrics)
+                    self.train_logic_metrics.append({"epoch": train_epoch} | metrics)
                 else:
                     self.val_logic_metrics.append(metrics)
         self.len_model.to(self.device)

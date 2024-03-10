@@ -4,8 +4,12 @@ import os
 from typing import Literal
 
 import click
+import matplotlib.pyplot as plt
+import networkx as nx
+import numpy as np
 import torch
 import torch_geometric.transforms as T
+from torch_geometric.utils import to_networkx
 
 import glgexplainer.utils as utils
 from glgexplainer.local_explainations import read_lattice, lattice_classnames
@@ -64,10 +68,11 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
     test_group_loader = utils.build_dataloader(dataset_test, belonging_test,
                                                num_input_graphs=256)
 
-    click.secho("Creating plot directory", bold=True)
+    click.secho("Creating plot directory...", bold=True)
     plot_dir = f'GLGExplainer_plots/{seed}/{task}-{generalisation_mode}'
     os.makedirs(plot_dir, exist_ok=True)
 
+    click.secho("Creating GLGExplainer instance...", bold=True)
     torch.manual_seed(42)
     len_model = LEN(hyper_params["num_prototypes"],
                     hyper_params["LEN_temperature"],
@@ -82,7 +87,7 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
                         classes_names=lattice_classnames,
                         dataset_name=DATASET_NAME,
                         num_classes=len(
-                            train_group_loader.task_y.unique()),
+                            train_group_loader.dataset.task_y.unique()),
                         plot_dir=plot_dir
                         ).to(device)
 
@@ -100,8 +105,68 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
                                 fieldnames=['task', 'mode', 'seed', 'logic_acc',
                                             'logic_acc_clf', 'concept_purity',
                                             'concept_purity_std', 'LEN_fidelity',
-                                            'formula_len_0', 'formula_len_1'])
+                                            'formula_len_0', 'formula_len_1',
+                                            'formula_0', 'formula_1'])
         row = results | {'task': task, 'mode': generalisation_mode, 'seed': seed}
         if not csv_exists:
             writer.writeheader()
         writer.writerow(row)
+
+        click.secho("Creating graph prototypes plot...", bold=True)
+        plot_prototypes(expl, test_group_loader, dataset_test, plot_dir)
+
+        click.secho("Creating explanations plot...", bold=True)
+        plot_example_explanations(task, generalisation_mode, plot_dir)
+
+
+def plot_prototypes(expl: GLGExplainer, test_group_loader, dataset_test, plot_dir):
+    expl.hyper["assign_func"] = "sim"
+
+    x_train, emb, concepts_assignement, y_train_1h, le_classes, le_idxs, belonging = expl.get_concept_vector(
+        test_group_loader,
+        return_raw=True)
+    expl.hyper["assign_func"] = "discrete"
+
+    torch.manual_seed(42)
+    fig = plt.figure(figsize=(15, 5 * 1.8))
+    n = 0
+    for p in range(expl.hyper["num_prototypes"]):
+        idxs = le_idxs[concepts_assignement.argmax(-1) == p]
+        # idxs = idxs[torch.randperm(len(idxs))]    # random
+        sa = concepts_assignement[concepts_assignement.argmax(-1) == p]
+        idxs = idxs[torch.argsort(sa[:, p], descending=True)]
+        for ex in range(min(5, len(idxs))):
+            n += 1
+            ax = plt.subplot(expl.hyper["num_prototypes"], 5, n)
+            G = to_networkx(dataset_test[int(idxs[ex])], to_undirected=True,
+                            remove_self_loops=True)
+            pos = nx.spring_layout(G, seed=42)
+            nx.draw(G, pos, node_size=20, ax=ax, node_color="orange")
+            ax.axis("on")
+            plt.box(False)
+
+    for p in range(expl.hyper["num_prototypes"]):
+        plt.subplot(expl.hyper["num_prototypes"], 5, 5 * p + 1)
+        plt.ylabel(f"$P_{p}$\n", size=25, rotation="horizontal",
+                   labelpad=50)
+
+    plt.savefig(f"{plot_dir}/protype_examples.pdf", dpi=300, bbox_inches="tight")
+
+
+def plot_example_explanations(target, mode, plot_dir):
+    data = np.load(f"local_features/GNNExplainer/{target}_{mode}/x_train.npz")
+    y = np.load(f"local_features/GNNExplainer/{target}_{mode}/y_train.npy")
+    adjs = list(data.values())
+
+    fig, axs = plt.subplots(9, 9, figsize=(15, 15))
+    axs = axs.flatten()
+
+    for i in range(81):
+        adj = adjs[i].squeeze()
+        adj[adj > 0] = 1
+        G = nx.Graph(adj, undirected=True)
+        G.remove_edges_from(nx.selfloop_edges(G))
+        pos = nx.spring_layout(G, seed=42)
+        nx.draw(G, pos, ax=axs[i], node_color="orange", node_size=10)
+        axs[i].set_title(f'Class={y[i]}')
+    plt.savefig(f"{plot_dir}/example_explanations.pdf", dpi=300, bbox_inches="tight")
