@@ -262,7 +262,7 @@ def rewrite_formula_to_close(formula):
         tmp += ")"
         ret.sort(key=lambda x: len(x))
         ret.append(tmp)
-    return " | ".join(ret)
+    return " | ".join(ret), len(ret)
 
 
 def assemble_raw_explanations(explanations_raw):

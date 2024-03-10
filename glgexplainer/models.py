@@ -346,6 +346,8 @@ class GLGExplainer(torch.nn.Module):
                     x_train.shape[0]).long(), material=False)
 
             cluster_accs = utils.get_cluster_accuracy(concept_predictions, le_classes)
+            formula_0, formula_length_0 = utils.rewrite_formula_to_close(
+                utils.assemble_raw_explanations(explanation_raw))
             if plot:
                 print(
                     f"Concept Purity: {np.mean(cluster_accs):2f} +- {np.std(cluster_accs):2f}")
@@ -353,8 +355,7 @@ class GLGExplainer(torch.nn.Module):
                       np.unique(concept_predictions, return_counts=True))
                 print("Logic formulas:")
                 print("For class 0:")
-                print(accuracy0, utils.rewrite_formula_to_close(
-                    utils.assemble_raw_explanations(explanation_raw)))
+                print(accuracy0, formula_0)
 
             explanation1, explanation_raw = entropy.explain_class(self.len_model,
                                                                   x_train, y_train_1h,
@@ -374,11 +375,12 @@ class GLGExplainer(torch.nn.Module):
 
             len_fidelity = sum(y_train_1h[:, :].eq(y_pred[:, :] > 0).sum(
                 1) == self.num_classes) / len(y_pred)
+            formula_1, formula_length_1 = utils.rewrite_formula_to_close(
+                utils.assemble_raw_explanations(explanation_raw))
 
             if plot:
                 print("For class 1:")
-                print(accuracy1, utils.rewrite_formula_to_close(
-                    utils.assemble_raw_explanations(explanation_raw)))
+                print(accuracy1, formula_1)
 
             if self.num_classes == 3:
                 explanation2, explanation_raw = entropy.explain_class(self.len_model,
@@ -398,9 +400,10 @@ class GLGExplainer(torch.nn.Module):
                                                     target_class=2, mask=torch.arange(
                         x_train.shape[0]).long(), material=False)
                 if plot:
+                    formula, length = utils.rewrite_formula_to_close(
+                        utils.assemble_raw_explanations(explanation_raw))
                     print("For class 2:")
-                    print(accuracy2, utils.rewrite_formula_to_close(
-                        utils.assemble_raw_explanations(explanation_raw)))
+                    print(accuracy2, formula)
                 accuracy, preds = test_explanations(
                     [explanation0, explanation1, explanation2], x_train, y_train_1h,
                     mask=torch.arange(x_train.shape[0]).long(), material=False)
@@ -419,7 +422,10 @@ class GLGExplainer(torch.nn.Module):
             metrics = {'logic_acc': logic_acc, "logic_acc_clf": accuracy,
                        "concept_purity": np.mean(cluster_accs),
                        "concept_purity_std": np.std(cluster_accs),
-                       "LEN_fidelity": len_fidelity.item()}
+                       "LEN_fidelity": len_fidelity.item(),
+                       "formula_len_0": formula_length_0,
+                       "formula_len_1": formula_length_1
+                       }
 
             print()
             if log_wandb:

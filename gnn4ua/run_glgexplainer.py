@@ -95,7 +95,8 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
         writer = csv.DictWriter(csvfile,
                                 fieldnames=['task', 'mode', 'seed', 'logic_acc',
                                             'logic_acc_clf', 'concept_purity',
-                                            'concept_purity_std', 'LEN_fidelity'])
+                                            'concept_purity_std', 'LEN_fidelity',
+                                            'formula_len_0', 'formula_len_1'])
         row = results | {'task': task, 'mode': generalisation_mode, 'seed': seed}
         if not csv_exists:
             writer.writeheader()
