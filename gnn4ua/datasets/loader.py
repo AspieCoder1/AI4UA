@@ -19,6 +19,7 @@ class Targets(StrEnum):
     Join_SemiDistributive = 'Join_SemiDistributive'
     SemiDistributive = 'SemiDistributive'
     multilabel = 'multilabel'
+    QuasiCancellitive = 'QuasiCancellitive'
 
 
 class GeneralisationModes(StrEnum):

@@ -368,7 +368,7 @@ class GLGExplainer(torch.nn.Module):
             )
             click.secho("Logic formulas:", bold=True)
             click.echo("For class 0:")
-            click.echo(accuracy0, formula_0)
+            click.echo(f'{accuracy0: .4f} {formula_0}')
 
             explanation1, explanation_raw = entropy.explain_class(self.len_model,
                                                                   x_train, y_train_1h,
@@ -392,7 +392,7 @@ class GLGExplainer(torch.nn.Module):
                 utils.assemble_raw_explanations(explanation_raw))
 
             click.echo("For class 1:")
-            click.echo(accuracy1, formula_1)
+            click.echo(f'{accuracy1:.4f} {formula_1}')
 
             if self.num_classes == 3:
                 explanation2, explanation_raw = entropy.explain_class(self.len_model,
@@ -415,7 +415,7 @@ class GLGExplainer(torch.nn.Module):
                     formula, length = utils.rewrite_formula_to_close(
                         utils.assemble_raw_explanations(explanation_raw))
                     click.echo("For class 2:")
-                    click.echo(accuracy2, formula)
+                    click.echo(f'{accuracy2: .4f}, {formula}')
                 accuracy, preds = test_explanations(
                     [explanation0, explanation1, explanation2], x_train, y_train_1h,
                     mask=torch.arange(x_train.shape[0]).long(), material=False)
@@ -428,9 +428,9 @@ class GLGExplainer(torch.nn.Module):
                                                     material=False)
                 logic_acc = hmean([accuracy0, accuracy1])
 
-            click.secho(f"Accuracy as classifier: {round(accuracy, 4)}",
-                                 bold=True)
-            click.secho(f"LEN fidelity: {len_fidelity}", bold=True)
+                click.secho(f"Accuracy as classifier: {accuracy: 4f}",
+                                     bold=True)
+                click.secho(f"LEN fidelity: {len_fidelity}", bold=True)
 
             metrics = {'logic_acc': logic_acc, "logic_acc_clf": accuracy,
                        "concept_purity": np.mean(cluster_accs),
