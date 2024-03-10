@@ -116,7 +116,7 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
         plot_prototypes(expl, test_group_loader, dataset_test, plot_dir)
 
         click.secho("Creating explanations plot...", bold=True)
-        plot_example_explanations(task, generalisation_mode, plot_dir)
+        plot_example_explanations(task, generalisation_mode, plot_dir, seed)
 
 
 def plot_prototypes(expl: GLGExplainer, test_group_loader, dataset_test, plot_dir):
@@ -153,9 +153,9 @@ def plot_prototypes(expl: GLGExplainer, test_group_loader, dataset_test, plot_di
     plt.savefig(f"{plot_dir}/protype_examples.pdf", dpi=300, bbox_inches="tight")
 
 
-def plot_example_explanations(target, mode, plot_dir):
-    data = np.load(f"local_features/GNNExplainer/{target}_{mode}/x_train.npz")
-    y = np.load(f"local_features/GNNExplainer/{target}_{mode}/y_train.npy")
+def plot_example_explanations(target, mode, plot_dir, seed):
+    data = np.load(f"local_features/GNNExplainer/{seed}/{target}_{mode}/x_train.npz")
+    y = np.load(f"local_features/GNNExplainer/{seed}/{target}_{mode}/y_train.npy")
     adjs = list(data.values())
 
     fig, axs = plt.subplots(9, 9, figsize=(15, 15))
