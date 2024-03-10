@@ -1,7 +1,7 @@
 # L65 Project Repository
 
-_Forked from https://github.com/fragiannini/AI4UA and uses the code
-from https://github.com/steveazzolin/gnn_logic_global_expl to implement GLGExplainer._
+_Forked from [AI4UA repository](https://github.com/fragiannini/AI4UA) and uses the code
+from [Global Explainability of GNNs via Logic Combination of Learned Concepts repo](https://github.com/steveazzolin/gnn_logic_global_expl) to implement GLGExplainer._
 
 Repository for the L65 Geometric Deep Learning mini-project completed by Luke
 Braithwaite and Matthew Hattrup during Lent term 2024.
