@@ -330,7 +330,6 @@ class GLGExplainer(torch.nn.Module):
                 plot_name = f'step-{train_epoch}' if is_train_set else 'test-results'
                 plt.savefig(f"{self.plot_dir}/{plot_name}.pdf", dpi=300,
                             bbox_inches='tight')
-                # plt.show()
 
                 # log stats
             if isinstance(self.len_model[0], te.nn.logic.EntropyLinear):
