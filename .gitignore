@@ -12,3 +12,5 @@ results_binary/
 local_features/
 data_test
 samples_*.json
+GLGExplainer_plots
+GLGExplainer_results.csv
