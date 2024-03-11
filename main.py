@@ -27,7 +27,7 @@ def train_gnns():
     '--task',
     type=click.Choice(
         ['Distributive', 'Modular', 'Meet_SemiDistributive', 'Join_SemiDistributive', 'SemiDistributive',
-         'multilabel']
+         'multilabel', 'QuasiCancellitive']
     ),
     default='Distributive',
     help='Task to extract motifs for'
@@ -55,7 +55,7 @@ def extract_motifs(task: str, generalisation_mode: str, n_epochs: int, seed: str
     '--task',
     type=click.Choice(
         ['Distributive', 'Modular', 'Meet_SemiDistributive', 'Join_SemiDistributive', 'SemiDistributive',
-         'multilabel']
+         'multilabel', 'QuasiCancellitive']
     ),
     default='Distributive',
     help='Task to extract motifs for'

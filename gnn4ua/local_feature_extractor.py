@@ -74,7 +74,7 @@ def generate_motifs(model: nn.Module, train_data, test_data,
         out = explainer(
             x=train_sample.x,
             edge_index=train_sample.edge_index,
-            target=train_sample.y.float().squeeze(),
+            target=train_sample.y.long().squeeze(),
             batch=train_sample.batch
         )
         new_edge_index, new_edge_mask = to_undirected(edge_index=out.edge_index,
@@ -94,7 +94,7 @@ def generate_motifs(model: nn.Module, train_data, test_data,
         out = explainer(
             x=test_sample.x,
             edge_index=test_sample.edge_index,
-            target=test_sample.y.float().squeeze(),
+            target=test_sample.y.long().squeeze(),
             batch=test_sample.batch
         )
         new_edge_index, new_edge_mask = to_undirected(edge_index=out.edge_index,
