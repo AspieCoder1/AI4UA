@@ -10,10 +10,11 @@ from torch_geometric.loader import DataLoader
 from torchmetrics import MetricCollection
 from torchmetrics.classification import (MultilabelAUROC, MulticlassAUROC,
                                          MultilabelAccuracy, MulticlassAccuracy,
-                                         MultilabelF1Score, MulticlassF1Score, 
+                                         MultilabelF1Score, MulticlassF1Score,
                                          MultilabelPrecision, MulticlassPrecision,
-                                         MultilabelRecall, MulticlassRecall, 
-                                         MultilabelConfusionMatrix, MulticlassConfusionMatrix)
+                                         MultilabelRecall, MulticlassRecall,
+                                         MultilabelConfusionMatrix,
+                                         MulticlassConfusionMatrix, )
 from tqdm import trange
 
 from gnn4ua.datasets.loader import LatticeDataset, Targets, GeneralisationModes
@@ -32,7 +33,7 @@ def run_gnn_training():
     temperature = 1
     # targets = [Targets.multilabel, Targets.Distributive, Targets.Modular,
     #            Targets.Meet_SemiDistributive, Targets.Join_SemiDistributive, Targets.SemiDistributive]
-    targets = [Targets.Meet_SemiDistributive, Targets.Join_SemiDistributive, Targets.SemiDistributive]
+    targets = [Targets.QuasiCancellitive]
     # targets = [Targets.Distributive]
     generalisation_modes = [GeneralisationModes.strong, GeneralisationModes.weak]
     train_epochs = 200

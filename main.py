@@ -67,12 +67,13 @@ def extract_motifs(task: str, generalisation_mode: str, n_epochs: int, seed: str
     help='Generalisation mode used to train the GNN'
 )
 @click.option("--seed", type=click.Choice(['102', '106', '270']), default='102')
+@click.option("--explainer", type=click.Choice(['GNNExplainer', 'PGExplainer']), default='GNNExplainer')
 def train_explainer(task: str, generalisation_mode: str,
-                    seed: Literal['102', '106', '270']) -> None:
+                    seed: Literal['102', '106', '270'], explainer:str) -> None:
     task = Targets[task]
     generalisation_mode = GeneralisationModes[generalisation_mode]
 
-    run_glgexplainer(task, generalisation_mode, seed)
+    run_glgexplainer(task, generalisation_mode, seed, explainer)
 
 
 if __name__ == '__main__':

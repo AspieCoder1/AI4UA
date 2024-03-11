@@ -18,11 +18,11 @@ from gnn4ua.datasets.loader import Targets, GeneralisationModes
 
 
 def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
-                     seed: Literal['102', '106', '270']):
+                     seed: Literal['102', '106', '270'], explainer: str):
     DATASET_NAME = task
 
     click.secho(
-        f"RUNNING GLGEXPLAINER ON {DATASET_NAME.capitalize()}-{generalisation_mode.capitalize()} (SEED {seed})",
+        f"RUNNING {explainer.capitalize()} ON {DATASET_NAME.capitalize()}-{generalisation_mode.capitalize()} (SEED {seed})",
         fg='blue', bold=True, underline=True)
 
     click.secho("Loading hyperparameters...", bold=True)
@@ -32,7 +32,7 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
     click.secho("Processing datasets...", bold=True)
     adjs_train, edge_weights_train, ori_classes_train, belonging_train, summary_predictions_train, le_classes_train = read_lattice(
         seed=seed,
-        explainer='GNNExplainer',
+        explainer=explainer,
         target=task,
         mode=generalisation_mode,
         split='train'
@@ -40,7 +40,7 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
 
     adjs_test, edge_weights_test, ori_classes_test, belonging_test, summary_predictions_test, le_classes_test = read_lattice(
         seed=seed,
-        explainer='GNNExplainer',
+        explainer=explainer,
         target=task,
         mode=generalisation_mode,
         split='test'
@@ -69,7 +69,7 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
                                                num_input_graphs=256)
 
     click.secho("Creating plot directory...", bold=True)
-    plot_dir = f'GLGExplainer_plots/{seed}/{task}-{generalisation_mode}'
+    plot_dir = f'{explainer}_plots/{seed}/{task}-{generalisation_mode}'
     os.makedirs(plot_dir, exist_ok=True)
 
     click.secho("Creating GLGExplainer instance...", bold=True)
@@ -100,7 +100,7 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
     click.secho("Writing results...", bold=True)
     csv_exists = os.path.exists('GLGExplainer_results.csv')
 
-    with open('GLGExplainer_results.csv', 'a+') as csvfile:
+    with open(f'{explainer}_results.csv', 'a+') as csvfile:
         writer = csv.DictWriter(csvfile,
                                 fieldnames=['task', 'mode', 'seed', 'logic_acc',
                                             'logic_acc_clf', 'concept_purity',
