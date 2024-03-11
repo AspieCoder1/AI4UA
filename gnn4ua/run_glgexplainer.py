@@ -24,7 +24,7 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
     DATASET_NAME = task
 
     click.secho(
-        f"RUNNING {explainer.capitalize()} ON {DATASET_NAME.capitalize()}-{generalisation_mode.capitalize()} (SEED {seed} NUM_MOTIFS {n_motifs} NUM_PROTOTYPES {n_prototypes})",
+        f"RUNNING {explainer.upper()} ON {DATASET_NAME.upper()}-{generalisation_mode.upper()} (SEED {seed} NUM_MOTIFS {n_motifs} NUM_PROTOTYPES {n_prototypes})",
         fg='blue', bold=True, underline=True)
 
     click.secho("Loading hyperparameters...", bold=True)
@@ -90,7 +90,7 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
                         le_model,
                         device=device,
                         hyper_params=hyper_params,
-                        classes_names=generate_lattice_classnames(n_motifs),
+                        classes_names=generate_lattice_classnames(n_motifs=n_motifs),
                         dataset_name=DATASET_NAME,
                         num_classes=len(
                             train_group_loader.dataset.task_y.unique()),

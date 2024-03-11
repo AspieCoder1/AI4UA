@@ -38,7 +38,7 @@ def generate_motifs(model: nn.Module, train_data, test_data,
     """
 
     click.secho(
-        f"EXTRACTING MOTIFS {task}-{generalisation_mode} (SEED {seed}, {n_epochs} EPOCHS)",
+        f"EXTRACTING MOTIFS {task.upper()}-{generalisation_mode.upper()} (SEED {seed}, {n_epochs} EPOCHS)",
         fg="blue", bold=True, blink=True)
 
     model.eval()

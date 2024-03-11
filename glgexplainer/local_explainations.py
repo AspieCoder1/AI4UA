@@ -76,7 +76,7 @@ def elbow_method(weights, index_stopped=None, min_num_include=7, backup=None):
 
 def assign_class_lattice(pattern_matched, lattice_classnames):
     if len(pattern_matched) == 0 or len(pattern_matched) > 2:
-        return 15
+        return lattice_classnames.index('OTHER')
 
     if len(pattern_matched) == 1:
         return pattern_matched[0]
@@ -91,7 +91,7 @@ def label_explanation_lattice(G_orig, return_raw=False,
                               n_motifs: int = len(pattern_names),
                               lattice_classnames=None):
     if lattice_classnames is None:
-        lattice_classnames = []
+        lattice_classnames = generate_lattice_classnames(n_motifs)
     pattern_matched = []
     for i, pattern in enumerate(PATTERN_LIST[:n_motifs]):
         GM = isomorphism.GraphMatcher(G_orig, pattern)
@@ -113,7 +113,7 @@ def read_lattice(explainer="PGExplainer", target: Targets = Targets.Distributive
     ori_adjs, ori_edge_weights, ori_classes, belonging, ori_predictions = [], [], [], [], []
     precomputed_embeddings, gnn_embeddings = [], []
     total_graph_labels, total_cc_labels, le_classes = [], [], []
-    lattice_classnames = generate_lattice_classnames(n_motifs)
+    lattice_classnames = generate_lattice_classnames(n_motifs=n_motifs)
 
     global summary_predictions
     summary_predictions = {"correct": [], "wrong": []}
