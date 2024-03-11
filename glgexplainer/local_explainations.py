@@ -45,8 +45,6 @@ pattern_BCO.add_edges_from([
 
 PATTERN_LIST = [pattern_N5, pattern_M3, pattern_C4, pattern_C6, pattern_house]
 pattern_names = ['N5', 'M3', 'C4', 'C6', 'HOUSE']
-lattice_classnames = pattern_names + list(
-    map(lambda x: '+'.join(x), itertools.combinations(pattern_names, r=2))) + ['OTHER']
 
 
 def generate_lattice_classnames(n_motifs: int):
@@ -76,7 +74,7 @@ def elbow_method(weights, index_stopped=None, min_num_include=7, backup=None):
     return stop
 
 
-def assign_class_lattice(pattern_matched):
+def assign_class_lattice(pattern_matched, lattice_classnames):
     if len(pattern_matched) == 0 or len(pattern_matched) > 2:
         return 15
 
@@ -90,7 +88,10 @@ def assign_class_lattice(pattern_matched):
 
 
 def label_explanation_lattice(G_orig, return_raw=False,
-                              n_motifs: int = len(pattern_names)):
+                              n_motifs: int = len(pattern_names),
+                              lattice_classnames=None):
+    if lattice_classnames is None:
+        lattice_classnames = []
     pattern_matched = []
     for i, pattern in enumerate(PATTERN_LIST[:n_motifs]):
         GM = isomorphism.GraphMatcher(G_orig, pattern)
@@ -99,7 +100,7 @@ def label_explanation_lattice(G_orig, return_raw=False,
     if return_raw:
         return pattern_matched
     else:
-        return assign_class_lattice(pattern_matched)
+        return assign_class_lattice(pattern_matched, lattice_classnames)
 
 
 def read_lattice(explainer="PGExplainer", target: Targets = Targets.Distributive,
@@ -112,6 +113,7 @@ def read_lattice(explainer="PGExplainer", target: Targets = Targets.Distributive
     ori_adjs, ori_edge_weights, ori_classes, belonging, ori_predictions = [], [], [], [], []
     precomputed_embeddings, gnn_embeddings = [], []
     total_graph_labels, total_cc_labels, le_classes = [], [], []
+    lattice_classnames = generate_lattice_classnames(n_motifs)
 
     global summary_predictions
     summary_predictions = {"correct": [], "wrong": []}
@@ -133,21 +135,27 @@ def read_lattice(explainer="PGExplainer", target: Targets = Targets.Distributive
             G = nx.Graph(masked, undirected=True)
             G.remove_edges_from(nx.selfloop_edges(G))
             added = 0
-            graph_labels = label_explanation_lattice(G_orig, return_raw=True, n_motifs=n_motifs)
-            summary_predictions["correct"].append(assign_class_lattice(graph_labels))
+            graph_labels = label_explanation_lattice(G_orig, return_raw=True,
+                                                     n_motifs=n_motifs,
+                                                     lattice_classnames=lattice_classnames)
+            summary_predictions["correct"].append(assign_class_lattice(graph_labels,
+                                                                       lattice_classnames=lattice_classnames))
             total_cc_labels.append([])
             cc_labels = []
             for cc in nx.connected_components(G):
                 G1 = G.subgraph(cc)
                 if nx.diameter(G1) != len(G1.edges()) or len(G1.nodes()) > 2:  # if is not a line
-                    cc_lbl = label_explanation_lattice(G1, return_raw=True, n_motifs=n_motifs)
+                    cc_lbl = label_explanation_lattice(G1, return_raw=True,
+                                                       n_motifs=n_motifs,
+                                                       lattice_classnames=lattice_classnames)
                     added += 1
                     cc_labels.extend(cc_lbl)
                     total_cc_labels[-1].extend(cc_lbl)
                     adjs.append(nx.to_numpy_array(G1))
                     edge_weights.append(nx.get_edge_attributes(G1, "weight"))
                     belonging.append(idx)
-                    le_classes.append(assign_class_lattice(cc_lbl))
+                    le_classes.append(assign_class_lattice(cc_lbl,
+                                                           lattice_classnames=lattice_classnames))
 
             if not total_cc_labels[-1]:
                 del total_cc_labels[-1]
