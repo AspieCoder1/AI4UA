@@ -1,10 +1,10 @@
 #!/bin/zsh
 
-tasks=( 'Distributive' 'Modular' 'QuasiCancellitive' )
+tasks=( 'Distributive' 'Modular' )
 modes=( 'strong' 'weak' )
-seeds=( '102' '106' '270' )
+seeds=( '102' )
 num_prototypes=(2 4 6 8)
-num_motifs=(1 2 3 4 5)
+num_motifs=(2 3 4 5)
 
 for task in "${tasks[@]}"; do
   for seed in "${seeds[@]}"; do

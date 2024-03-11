@@ -435,8 +435,8 @@ class GLGExplainer(torch.nn.Module):
                        "concept_purity": np.mean(cluster_accs),
                        "concept_purity_std": np.std(cluster_accs),
                        "LEN_fidelity": len_fidelity.item(),
-                       "formula_len_0": formula_length_0,
-                       "formula_len_1": formula_length_1,
+                       # "formula_len_0": formula_length_0,
+                       # "formula_len_1": formula_length_1,
                        'formula_0': formula_0,
                        'formula_1': formula_1,
                        }

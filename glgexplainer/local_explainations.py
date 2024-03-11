@@ -49,6 +49,12 @@ lattice_classnames = pattern_names + list(
     map(lambda x: '+'.join(x), itertools.combinations(pattern_names, r=2))) + ['OTHER']
 
 
+def generate_lattice_classnames(n_motifs: int):
+    return list(
+        map(lambda x: '+'.join(x),
+            itertools.combinations(pattern_names[:n_motifs], r=2))) + ['OTHER']
+
+
 
 def elbow_method(weights, index_stopped=None, min_num_include=7, backup=None):
     sorted_weights = sorted(weights, reverse=True)

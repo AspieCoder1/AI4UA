@@ -12,7 +12,8 @@ import torch_geometric.transforms as T
 from torch_geometric.utils import to_networkx
 
 import glgexplainer.utils as utils
-from glgexplainer.local_explainations import read_lattice, lattice_classnames
+from glgexplainer.local_explainations import (read_lattice, pattern_names,
+                                              generate_lattice_classnames, )
 from glgexplainer.models import LEN, GLGExplainer, LEEmbedder
 from gnn4ua.datasets.loader import Targets, GeneralisationModes
 
@@ -23,7 +24,7 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
     DATASET_NAME = task
 
     click.secho(
-        f"RUNNING {explainer.capitalize()} ON {DATASET_NAME.capitalize()}-{generalisation_mode.capitalize()} (SEED {seed})",
+        f"RUNNING {explainer.capitalize()} ON {DATASET_NAME.capitalize()}-{generalisation_mode.capitalize()} (SEED {seed} NUM_MOTIFS {n_motifs} NUM_PROTOTYPES {n_prototypes})",
         fg='blue', bold=True, underline=True)
 
     click.secho("Loading hyperparameters...", bold=True)
@@ -89,7 +90,7 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
                         le_model,
                         device=device,
                         hyper_params=hyper_params,
-                        classes_names=lattice_classnames,
+                        classes_names=generate_lattice_classnames(n_motifs),
                         dataset_name=DATASET_NAME,
                         num_classes=len(
                             train_group_loader.dataset.task_y.unique()),
@@ -103,20 +104,20 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
     results = expl.inspect(test_group_loader, plot=True)
 
     click.secho("Writing results...", bold=True)
-    csv_exists = os.path.exists('GLGExplainer_results.csv')
+    csv_exists = os.path.exists(f'{explainer}_results.csv')
 
     with open(f'{explainer}_results.csv', 'a+') as csvfile:
         writer = csv.DictWriter(csvfile,
                                 fieldnames=['task', 'mode', 'seed',
                                             'num_prototypes',
-                                            'motifs'
+                                            'motifs',
                                             'logic_acc',
                                             'logic_acc_clf', 'concept_purity',
                                             'concept_purity_std', 'LEN_fidelity',
                                             'formula_0', 'formula_1'])
         row = results | {'task': task, 'mode': generalisation_mode, 'seed': seed,
                          'num_prototypes': hyper_params["num_prototypes"],
-                         'motifs': '+'.join(lattice_classnames)}
+                         'motifs': '+'.join(pattern_names[:n_motifs])}
         if not csv_exists:
             writer.writeheader()
         writer.writerow(row)
