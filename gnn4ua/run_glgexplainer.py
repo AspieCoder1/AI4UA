@@ -102,12 +102,16 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
 
     with open(f'{explainer}_results.csv', 'a+') as csvfile:
         writer = csv.DictWriter(csvfile,
-                                fieldnames=['task', 'mode', 'seed', 'logic_acc',
+                                fieldnames=['task', 'mode', 'seed',
+                                            'num_prototypes',
+                                            'motifs'
+                                            'logic_acc',
                                             'logic_acc_clf', 'concept_purity',
                                             'concept_purity_std', 'LEN_fidelity',
-                                            'formula_len_0', 'formula_len_1',
                                             'formula_0', 'formula_1'])
-        row = results | {'task': task, 'mode': generalisation_mode, 'seed': seed}
+        row = results | {'task': task, 'mode': generalisation_mode, 'seed': seed,
+                         'num_prototypes': hyper_params["num_prototypes"],
+                         'motifs': '+'.join(lattice_classnames)}
         if not csv_exists:
             writer.writeheader()
         writer.writerow(row)

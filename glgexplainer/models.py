@@ -438,7 +438,7 @@ class GLGExplainer(torch.nn.Module):
                        "formula_len_0": formula_length_0,
                        "formula_len_1": formula_length_1,
                        'formula_0': formula_0,
-                       'formula_1': formula_1
+                       'formula_1': formula_1,
                        }
 
             if log_wandb:
