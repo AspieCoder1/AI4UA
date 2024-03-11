@@ -41,11 +41,15 @@ def train_gnns():
 @click.option("--n_epochs", type=int, default=1,
               help="Number of training epochs for PGExplainer")
 @click.option("--seed", type=click.Choice(['102', '106', '270']), default='102')
-def extract_motifs(task: str, generalisation_mode: str, n_epochs: int, seed: str):
+@click.option("--explainer", type=click.Choice(['GNNExplainer', 'PGExplainer']),
+              default='GNNExplainer')
+def extract_motifs(task: str, generalisation_mode: str, n_epochs: int, seed: str,
+                   explainer: str):
     task = Targets[task]
     generalisation_mode = GeneralisationModes[generalisation_mode]
 
-    generate_local_motif(task, generalisation_mode, n_epochs, seed=seed)
+    generate_local_motif(task, generalisation_mode, n_epochs, seed=seed,
+                         explainer=explainer)
 
 
 @cli.command(
