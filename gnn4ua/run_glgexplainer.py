@@ -18,7 +18,8 @@ from gnn4ua.datasets.loader import Targets, GeneralisationModes
 
 
 def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
-                     seed: Literal['102', '106', '270'], explainer: str):
+                     seed: Literal['102', '106', '270'], explainer: str,
+                     n_prototypes: int, n_motifs: int):
     DATASET_NAME = task
 
     click.secho(
@@ -29,13 +30,16 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
     with open(f"config/{DATASET_NAME}_params.json") as json_file:
         hyper_params = json.load(json_file)
 
+    hyper_params['num_prototypes'] = n_prototypes
+
     click.secho("Processing datasets...", bold=True)
     adjs_train, edge_weights_train, ori_classes_train, belonging_train, summary_predictions_train, le_classes_train = read_lattice(
         seed=seed,
         explainer=explainer,
         target=task,
         mode=generalisation_mode,
-        split='train'
+        split='train',
+        n_motifs=n_motifs
     )
 
     adjs_test, edge_weights_test, ori_classes_test, belonging_test, summary_predictions_test, le_classes_test = read_lattice(
@@ -43,7 +47,8 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
         explainer=explainer,
         target=task,
         mode=generalisation_mode,
-        split='test'
+        split='test',
+        n_motifs=n_motifs
     )
 
     device = "cpu"  # torch.device('cuda' if torch.cuda.is_available() else 'cpu')

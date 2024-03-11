@@ -83,11 +83,9 @@ def assign_class_lattice(pattern_matched):
     return lattice_classnames.index(f'{p1_name}+{p2_name}')
 
 
-
-
-def label_explanation_lattice(G_orig, return_raw=False):
+def label_explanation_lattice(G_orig, return_raw=False, n_motifs: int = 4):
     pattern_matched = []
-    for i, pattern in enumerate(PATTERN_LIST):
+    for i, pattern in enumerate(PATTERN_LIST[:n_motifs]):
         GM = isomorphism.GraphMatcher(G_orig, pattern)
         if GM.subgraph_is_isomorphic():
             pattern_matched.append(i)
@@ -100,7 +98,8 @@ def label_explanation_lattice(G_orig, return_raw=False):
 def read_lattice(explainer="PGExplainer", target: Targets = Targets.Distributive,
                  mode: GeneralisationModes = GeneralisationModes.strong,
                  split: Literal['train', 'test'] = 'train', min_num_include: int = 7,
-                 evaluate_method=False, seed: Literal['102', '106', '270'] = '102'):
+                 evaluate_method=False, seed: Literal['102', '106', '270'] = '102',
+                 n_motifs: int = 4):
     base_path = f"local_features/{explainer}/{seed}/{target}_{mode}/"
     adjs, edge_weights, index_stopped = [], [], []
     ori_adjs, ori_edge_weights, ori_classes, belonging, ori_predictions = [], [], [], [], []
@@ -127,14 +126,14 @@ def read_lattice(explainer="PGExplainer", target: Targets = Targets.Distributive
             G = nx.Graph(masked, undirected=True)
             G.remove_edges_from(nx.selfloop_edges(G))
             added = 0
-            graph_labels = label_explanation_lattice(G_orig, return_raw=True)
+            graph_labels = label_explanation_lattice(G_orig, return_raw=True, n_motifs=n_motifs)
             summary_predictions["correct"].append(assign_class_lattice(graph_labels))
             total_cc_labels.append([])
             cc_labels = []
             for cc in nx.connected_components(G):
                 G1 = G.subgraph(cc)
                 if nx.diameter(G1) != len(G1.edges()) or len(G1.nodes()) > 2:  # if is not a line
-                    cc_lbl = label_explanation_lattice(G1, return_raw=True)
+                    cc_lbl = label_explanation_lattice(G1, return_raw=True, n_motifs=n_motifs)
                     added += 1
                     cc_labels.extend(cc_lbl)
                     total_cc_labels[-1].extend(cc_lbl)
