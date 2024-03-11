@@ -83,7 +83,8 @@ def assign_class_lattice(pattern_matched):
     return lattice_classnames.index(f'{p1_name}+{p2_name}')
 
 
-def label_explanation_lattice(G_orig, return_raw=False, n_motifs: int = 4):
+def label_explanation_lattice(G_orig, return_raw=False,
+                              n_motifs: int = len(pattern_names)):
     pattern_matched = []
     for i, pattern in enumerate(PATTERN_LIST[:n_motifs]):
         GM = isomorphism.GraphMatcher(G_orig, pattern)
