@@ -75,7 +75,7 @@ def run_glgexplainer(task: Targets, generalisation_mode: GeneralisationModes,
                                                num_input_graphs=256)
 
     click.secho("Creating plot directory...", bold=True)
-    plot_dir = f'{explainer}_plots/{seed}/{task}-{generalisation_mode}'
+    plot_dir = f'{explainer}_plots/{seed}/{task}-{generalisation_mode}/{n_motifs}-{n_prototypes}'
     os.makedirs(plot_dir, exist_ok=True)
 
     click.secho("Creating GLGExplainer instance...", bold=True)
