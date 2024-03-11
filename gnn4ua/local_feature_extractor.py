@@ -82,7 +82,7 @@ def generate_motifs(model: nn.Module, train_data, test_data,
                                                       reduce='max')
         explain_list_train.append(
             to_dense_adj(new_edge_index, edge_attr=new_edge_mask))
-        explain_list_train_classes.append(torch.argmax(train_sample.y).item())
+        explain_list_train_classes.append(train_sample.y.item())
 
     np.savez_compressed(f'{path}/x_train', *explain_list_train)
     np.save(f'{path}/y_train', np.array(explain_list_train_classes))
@@ -102,7 +102,7 @@ def generate_motifs(model: nn.Module, train_data, test_data,
                                                       reduce='max')
 
         explain_list_test.append(to_dense_adj(new_edge_index, edge_attr=new_edge_mask))
-        explain_list_test_classes.append(torch.argmax(test_sample.y).item())
+        explain_list_test_classes.append(test_sample.y.item())
 
     np.savez_compressed(f'{path}/x_test', *explain_list_test)
     np.save(f'{path}/y_test', np.array(explain_list_test_classes))

@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-tasks=( 'Distributive' 'Modular' )
+tasks=( 'QuasiCancellitive' )
 modes=( 'strong' 'weak' )
 seeds=( '102' '106' '270' )
 
